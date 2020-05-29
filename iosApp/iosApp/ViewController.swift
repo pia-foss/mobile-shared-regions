@@ -9,10 +9,10 @@ class ViewController: UIViewController, PingRequest, MessageVerificator {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        let regionsBuilder = RegionsBuilder.init()
-        regionsBuilder.setPingRequestDependency(pingRequestDependency: self)
-        regionsBuilder.setMessageVerificatorDependency(messageVerificatorDependency: self)
-        let region = RegionsBuilder.build(regionsBuilder)()
+        let region = RegionsBuilder()
+            .setPingRequestDependency(pingRequestDependency: self)
+            .setMessageVerificatorDependency(messageVerificatorDependency: self)
+            .build()
         region.fetch { (response, error) in
             print("PIAiOS. fetch response: \(response) error: \(error)")
 
