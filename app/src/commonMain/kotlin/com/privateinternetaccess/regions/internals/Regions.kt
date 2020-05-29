@@ -4,15 +4,20 @@ import com.privateinternetaccess.regions.PingRequest
 import com.privateinternetaccess.regions.RegionLowerLatencyInformation
 import com.privateinternetaccess.regions.RegionsAPI
 import com.privateinternetaccess.regions.RegionsProtocol
+import com.privateinternetaccess.regions.MessageVerificator
 import com.privateinternetaccess.regions.model.RegionsResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.features.HttpTimeout
 import io.ktor.client.request.get
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
 import kotlin.coroutines.CoroutineContext
 
-internal class Regions(private val pingDependency: PingRequest) : RegionsAPI, CoroutineScope {
+internal class Regions(
+        private val pingDependency: PingRequest,
+        private val messageVerificator: MessageVerificator
+) : RegionsAPI, CoroutineScope {
 
     companion object {
         private const val ENDPOINT = "https://serverlist.piaservers.net/vpninfo/servers/new"
@@ -29,6 +34,12 @@ internal class Regions(private val pingDependency: PingRequest) : RegionsAPI, Co
             val portForwarding: Boolean
     )
 
+    private val job = Job()
+    private val client = HttpClient() {
+        install(HttpTimeout) {
+            requestTimeoutMillis = REQUEST_TIMEOUT_MS
+        }
+    }
     private var knownRegionsResponse: RegionsResponse? = null
 
     // region CoroutineScope
@@ -57,25 +68,26 @@ internal class Regions(private val pingDependency: PingRequest) : RegionsAPI, Co
     private fun fetchAsync(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = launch {
-        val responseList = HttpClient() {
-            install(HttpTimeout) {
-                requestTimeoutMillis = REQUEST_TIMEOUT_MS
-            }
-        }.get<String>(ENDPOINT).split("\n\n")
+        val responseList = client.get<String>(ENDPOINT).split("\n\n")
         val json = responseList.first()
         val key = responseList.last()
 
         var error: Error? = null
-        if (verifySignature(key, json)) {
+        if (messageVerificator.verifyMessage(json, key)) {
             knownRegionsResponse = serialize(json)
         } else {
             error = Error("Invalid signature")
         }
-        callback(knownRegionsResponse, error)
+
+        withContext(Dispatchers.Main) {
+            callback(knownRegionsResponse, error)
+        }
     }
 
     private fun serialize(jsonResponse: String) =
-            Json.parse(RegionsResponse.serializer(), jsonResponse)
+            Json(JsonConfiguration(
+                    ignoreUnknownKeys = true
+            )).parse(RegionsResponse.serializer(), jsonResponse)
 
     private fun pingRequestsAsync(
             protocol: RegionsProtocol,
@@ -153,10 +165,5 @@ internal class Regions(private val pingDependency: PingRequest) : RegionsAPI, Co
         }
         return result
     }
-
-    private fun verifySignature(key: String, message: String): Boolean {
-        // WIP - Trust everything in the meantime
-        return true
-    }
-    // endregion
+// endregion
 }
