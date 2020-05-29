@@ -35,15 +35,28 @@ public interface RegionsAPI {
 }
 
 /**
- * Factory class creating an instance of an object conforming to the `RegionsAPI` interface.
+ * Builder class responsible for creating an instance of an object conforming to
+ * the `RegionsAPI` interface.
  */
-public class RegionsFactory {
+public class RegionsBuilder {
+    private var pingRequestDependency: PingRequest? = null
+    private var messageVerificatorDependency: MessageVerificator? = null
+
+    fun setPingRequestDependency(pingRequestDependency: PingRequest): RegionsBuilder =
+            apply { this.pingRequestDependency = pingRequestDependency }
+
+    fun setMessageVerificatorDependency(messageVerificatorDependency: MessageVerificator): RegionsBuilder =
+            apply { this.messageVerificatorDependency = messageVerificatorDependency }
 
     /**
      * @return `RegionsAPI` instance.
      */
-    companion object {
-        fun create(pingDependency: PingRequest): RegionsAPI = Regions(pingDependency)
+    fun build(): RegionsAPI {
+        val pingDependency = pingRequestDependency
+                ?: throw Exception("Essential ping request dependency missing.")
+        val messageVerificator = messageVerificatorDependency
+                ?: throw Exception("Essential message verification dependency missing.")
+        return Regions(pingDependency, messageVerificator)
     }
 }
 
@@ -69,6 +82,18 @@ public interface PingRequest {
      * @param latency Long. Latency to the endpoint.
      */
     data class PlatformPingResult(val endpoint: String, val latency: Long)
+}
+
+/**
+ * Class defining the logic for the key message verification.
+ */
+public interface MessageVerificator {
+
+    /**
+     * @param message String. Message to verify.
+     * @param key String. Verification key.
+     */
+    fun verifyMessage(message: String, key: String): Boolean
 }
 
 /**
