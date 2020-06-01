@@ -6,7 +6,7 @@ import java.security.*
 import java.security.spec.InvalidKeySpecException
 import java.security.spec.X509EncodedKeySpec
 
-private class MessageVerificationHandler : MessageVerificator {
+internal class MessageVerificationHandler : MessageVerificator {
 
     companion object {
         private const val PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\n"+
