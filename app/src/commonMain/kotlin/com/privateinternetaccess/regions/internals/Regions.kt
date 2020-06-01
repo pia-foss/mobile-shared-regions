@@ -34,7 +34,6 @@ internal class Regions(
             val portForwarding: Boolean
     )
 
-    private val job = Job()
     private val client = HttpClient() {
         install(HttpTimeout) {
             requestTimeoutMillis = REQUEST_TIMEOUT_MS
@@ -93,16 +92,18 @@ internal class Regions(
             protocol: RegionsProtocol,
             callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
     ) = launch {
-        var error: Error? = null
-        var response = listOf<RegionLowerLatencyInformation>()
-        knownRegionsResponse?.let {
-            response = requestEndpointsLowerLatencies(protocol, it)
-        } ?: run {
-            error = Error("Unknown regions")
-        }
+        withContext(Dispatchers.Default) {
+            var error: Error? = null
+            var response = listOf<RegionLowerLatencyInformation>()
+            knownRegionsResponse?.let {
+                response = requestEndpointsLowerLatencies(protocol, it)
+            } ?: run {
+                error = Error("Unknown regions")
+            }
 
-        withContext(Dispatchers.Main) {
-            callback(response, error)
+            withContext(Dispatchers.Main) {
+                callback(response, error)
+            }
         }
     }
 
