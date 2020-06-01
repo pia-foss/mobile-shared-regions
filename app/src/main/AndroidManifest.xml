@@ -9,7 +9,7 @@
             android:theme="@style/AppTheme"
             android:usesCleartextTraffic="true">
 
-        <activity android:name="sample.MainActivity">
+        <activity android:name="com.privateinternetaccess.bridge.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
