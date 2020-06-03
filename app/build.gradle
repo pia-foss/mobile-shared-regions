@@ -17,15 +17,14 @@ repositories {
     mavenCentral()
 }
 
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android-extensions'
-apply plugin: "kotlinx-serialization"
+apply plugin: 'kotlinx-serialization'
 apply plugin: 'kotlin-native-cocoapods'
 
 android {
     compileSdkVersion 29
     defaultConfig {
-        applicationId 'com.privateinternetaccess.regions'
         minSdkVersion 15
         targetSdkVersion 29
     }
@@ -37,7 +36,7 @@ android {
 kotlin {
     version = "1.0.0"
     cocoapods {
-        summary = "Regions module testing"
+        summary = "Regions Module"
         homepage = "https://www.privateinternetaccess.com"
         frameworkName = "Regions"
     }
@@ -54,7 +53,6 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            // Commons
             implementation 'io.ktor:ktor-client-core:1.3.2'
             implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
             implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.3.5-native-mt'
@@ -65,18 +63,12 @@ kotlin {
             implementation 'org.jetbrains.kotlin:kotlin-test-annotations-common'
         }
         androidMain.dependencies {
-            // Commons
             implementation 'io.ktor:ktor-client-android:1.3.2'
             implementation 'org.jetbrains.kotlin:kotlin-stdlib'
             implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.5-native-mt'
             implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0'
-
-            // Android UI
-            implementation 'com.android.support:appcompat-v7:28.0.0'
-            implementation 'com.android.support.constraint:constraint-layout:1.1.3'
         }
         iOSMain.dependencies {
-            // Commons
             implementation 'io.ktor:ktor-client-ios:1.3.2'
             implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.3.5-native-mt'
             implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:0.20.0'
@@ -85,11 +77,6 @@ kotlin {
 
 }
 
-// This task attaches native framework built from ios module to Xcode project
-// (see iosApp directory). Don't run this task directly,
-// Xcode runs this task itself during its build process.
-// Before opening the project from iosApp directory in Xcode,
-// make sure all Gradle infrastructure exists (gradle.wrapper, gradlew).
 task copyFramework {
     def buildType = project.findProperty('kotlin.build.type') ?: 'DEBUG'
     dependsOn kotlin.targets.iOS.binaries.getFramework(buildType).linkTask

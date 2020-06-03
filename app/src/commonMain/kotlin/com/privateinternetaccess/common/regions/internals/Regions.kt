@@ -1,11 +1,11 @@
-package com.privateinternetaccess.regions.internals
+package com.privateinternetaccess.common.regions.internals
 
-import com.privateinternetaccess.regions.PingRequest
-import com.privateinternetaccess.regions.RegionLowerLatencyInformation
-import com.privateinternetaccess.regions.RegionsAPI
-import com.privateinternetaccess.regions.RegionsProtocol
-import com.privateinternetaccess.regions.MessageVerificator
-import com.privateinternetaccess.regions.model.RegionsResponse
+import com.privateinternetaccess.common.regions.PingRequest
+import com.privateinternetaccess.common.regions.RegionLowerLatencyInformation
+import com.privateinternetaccess.common.regions.RegionsAPI
+import com.privateinternetaccess.common.regions.RegionsProtocol
+import com.privateinternetaccess.common.regions.MessageVerificator
+import com.privateinternetaccess.common.regions.model.RegionsResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.features.HttpTimeout
 import io.ktor.client.request.get

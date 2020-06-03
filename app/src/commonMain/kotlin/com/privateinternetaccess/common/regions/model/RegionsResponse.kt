@@ -1,4 +1,4 @@
-package com.privateinternetaccess.regions.model
+package com.privateinternetaccess.common.regions.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

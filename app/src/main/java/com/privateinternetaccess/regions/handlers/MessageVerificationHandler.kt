@@ -1,6 +1,6 @@
-package com.privateinternetaccess.bridge.handlers
+package com.privateinternetaccess.regions.handlers
 
-import com.privateinternetaccess.regions.MessageVerificator
+import com.privateinternetaccess.common.regions.MessageVerificator
 import android.util.Base64
 import java.security.*
 import java.security.spec.InvalidKeySpecException
