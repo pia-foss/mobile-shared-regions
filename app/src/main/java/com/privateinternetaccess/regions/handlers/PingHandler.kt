@@ -1,7 +1,7 @@
-package com.privateinternetaccess.bridge.handlers
+package com.privateinternetaccess.regions.handlers
 
-import com.privateinternetaccess.regions.PingRequest
-import com.privateinternetaccess.regions.PingRequest.PlatformPingResult
+import com.privateinternetaccess.common.regions.PingRequest
+import com.privateinternetaccess.common.regions.PingRequest.PlatformPingResult
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis

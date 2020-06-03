@@ -1,7 +1,7 @@
-package com.privateinternetaccess.regions
+package com.privateinternetaccess.common.regions
 
-import com.privateinternetaccess.regions.internals.Regions
-import com.privateinternetaccess.regions.model.RegionsResponse
+import com.privateinternetaccess.common.regions.internals.Regions
+import com.privateinternetaccess.common.regions.model.RegionsResponse
 
 public enum class RegionsProtocol(val protocol: String) {
     OPENVPN_TCP("ovpntcp"),
