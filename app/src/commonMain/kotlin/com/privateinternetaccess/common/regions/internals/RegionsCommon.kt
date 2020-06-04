@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlin.coroutines.CoroutineContext
 
-internal class Regions(
+internal class RegionsCommon(
         private val pingDependency: PingRequest,
         private val messageVerificator: MessageVerificator
 ) : RegionsAPI, CoroutineScope {

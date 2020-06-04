@@ -1,6 +1,6 @@
 package com.privateinternetaccess.common.regions
 
-import com.privateinternetaccess.common.regions.internals.Regions
+import com.privateinternetaccess.common.regions.internals.RegionsCommon
 import com.privateinternetaccess.common.regions.model.RegionsResponse
 
 public enum class RegionsProtocol(val protocol: String) {
@@ -10,7 +10,7 @@ public enum class RegionsProtocol(val protocol: String) {
 }
 
 /**
- * Interface defining the API to be offered by the module.
+ * Interface defining the API to be offered by the common module.
  */
 public interface RegionsAPI {
 
@@ -38,14 +38,14 @@ public interface RegionsAPI {
  * Builder class responsible for creating an instance of an object conforming to
  * the `RegionsAPI` interface.
  */
-public class RegionsBuilder {
+public class RegionsCommonBuilder {
     private var pingRequestDependency: PingRequest? = null
     private var messageVerificatorDependency: MessageVerificator? = null
 
-    fun setPingRequestDependency(pingRequestDependency: PingRequest): RegionsBuilder =
+    fun setPingRequestDependency(pingRequestDependency: PingRequest): RegionsCommonBuilder =
             apply { this.pingRequestDependency = pingRequestDependency }
 
-    fun setMessageVerificatorDependency(messageVerificatorDependency: MessageVerificator): RegionsBuilder =
+    fun setMessageVerificatorDependency(messageVerificatorDependency: MessageVerificator): RegionsCommonBuilder =
             apply { this.messageVerificatorDependency = messageVerificatorDependency }
 
     /**
@@ -56,7 +56,7 @@ public class RegionsBuilder {
                 ?: throw Exception("Essential ping request dependency missing.")
         val messageVerificator = messageVerificatorDependency
                 ?: throw Exception("Essential message verification dependency missing.")
-        return Regions(pingDependency, messageVerificator)
+        return RegionsCommon(pingDependency, messageVerificator)
     }
 }
 
