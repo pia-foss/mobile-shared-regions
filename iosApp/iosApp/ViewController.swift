@@ -1,7 +1,9 @@
 import UIKit
-import app
+import Regions
 
 class ViewController: UIViewController, PingRequest, MessageVerificator {
+    
+    private var pinger: ICMPPing!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -9,6 +11,14 @@ class ViewController: UIViewController, PingRequest, MessageVerificator {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        
+        self.pinger = ICMPPing(ip: "84.17.56.42") { (latency) in
+            DispatchQueue.main.async { [weak self] in
+                print(latency)
+            }
+        }
+        self.pinger.start()
+        
         let region = RegionsBuilder()
             .setPingRequestDependency(pingRequestDependency: self)
             .setMessageVerificatorDependency(messageVerificatorDependency: self)
