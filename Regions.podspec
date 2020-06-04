@@ -11,10 +11,14 @@ Pod::Spec.new do |spec|
     spec.ios.deployment_target    = "11.0"
 
     spec.subspec "Core" do |p|
+      
         p.source_files = "Core", "iosApp/iosApp/Core/**/*.{h,m,swift}"
-        p.pod_target_xcconfig   = { "SWIFT_INCLUDE_PATHS" => "$(PODS_ROOT)/Regions/Core",
-                                    "APPLICATION_EXTENSION_API_ONLY" => "YES" }
+        p.private_header_files  = "iosApp/iosApp/Core/**/*.h"
         p.resources         = "iosApp/iosApp/Core/Resources/**/*"
+        p.preserve_paths        = "iosApp/iosApp/Core/*.modulemap"
+        
+        p.pod_target_xcconfig   = { "SWIFT_INCLUDE_PATHS" => "${PODS_TARGET_SRCROOT}/iosApp/iosApp/Core",
+                                    "APPLICATION_EXTENSION_API_ONLY" => "YES" }
 
     end
 
