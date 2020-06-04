@@ -76,29 +76,29 @@ extension ICMPPing: SimplePingDelegate {
     
     // MARK: pinger delegate callback
     
-    func simplePing(_ pinger: SimplePing, didStartWithAddress address: Data) {
+    public func simplePing(_ pinger: SimplePing, didStartWithAddress address: Data) {
         self.sendPing()
     }
     
-    func simplePing(_ pinger: SimplePing, didFailWithError error: Error) {
+    public func simplePing(_ pinger: SimplePing, didFailWithError error: Error) {
         completion(nil)
         self.stop()
     }
     
-    func simplePing(_ pinger: SimplePing, didSendPacket packet: Data, sequenceNumber: UInt16) {
+    public func simplePing(_ pinger: SimplePing, didSendPacket packet: Data, sequenceNumber: UInt16) {
         sentTime = Date().timeIntervalSince1970
     }
     
-    func simplePing(_ pinger: SimplePing, didFailToSendPacket packet: Data, sequenceNumber: UInt16, error: Error) {
+    public func simplePing(_ pinger: SimplePing, didFailToSendPacket packet: Data, sequenceNumber: UInt16, error: Error) {
         completion(nil)
     }
     
-    func simplePing(_ pinger: SimplePing, didReceivePingResponsePacket packet: Data, sequenceNumber: UInt16) {
+    public func simplePing(_ pinger: SimplePing, didReceivePingResponsePacket packet: Data, sequenceNumber: UInt16) {
         let latency = Int(((Date().timeIntervalSince1970 - sentTime).truncatingRemainder(dividingBy: 1)) * 1000)
         completion(latency)
     }
     
-    func simplePing(_ pinger: SimplePing, didReceiveUnexpectedPacket packet: Data) {
+    public func simplePing(_ pinger: SimplePing, didReceiveUnexpectedPacket packet: Data) {
     }
     
 }
