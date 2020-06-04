@@ -14,6 +14,8 @@ Pod::Spec.new do |spec|
         p.source_files = "Core", "iosApp/iosApp/Core/**/*.{h,m,swift}"
         p.pod_target_xcconfig   = { "SWIFT_INCLUDE_PATHS" => "$(PODS_ROOT)/Regions/Core",
                                     "APPLICATION_EXTENSION_API_ONLY" => "YES" }
+        p.resources         = "iosApp/iosApp/Core/Resources/**/*"
+
     end
 
     spec.pod_target_xcconfig = {
