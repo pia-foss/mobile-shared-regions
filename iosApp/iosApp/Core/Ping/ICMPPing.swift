@@ -22,7 +22,7 @@
 import Foundation
 import __RegionsLibraryNative
 
-class ICMPPing: NSObject {
+public class ICMPPing: NSObject {
     
     private var ipAddress: String!
     private var completion: (Int?) -> ()
@@ -31,12 +31,12 @@ class ICMPPing: NSObject {
     private var sentTime: TimeInterval = 0
     private var timeoutTimer: Timer!
 
-    init(ip: String, completionBlock: @escaping (Int?) -> ()) {
+    public init(ip: String, completionBlock: @escaping (Int?) -> ()) {
         self.completion = completionBlock
         self.ipAddress = ip
     }
     
-    func start() {
+    public func start() {
 
         let pinger = SimplePing(hostName: self.ipAddress)
         self.pinger = pinger
@@ -46,7 +46,7 @@ class ICMPPing: NSObject {
 
     }
     
-    func stop() {
+    public func stop() {
         
         self.pinger?.stop()
         self.pinger = nil
@@ -58,12 +58,12 @@ class ICMPPing: NSObject {
     /// Called to send a ping, both directly (as soon as the SimplePing object starts up) and
     /// via a timer (to continue sending pings periodically).
     
-    @objc func sendPing() {
+    @objc public func sendPing() {
         self.pinger!.send(with: nil)
         self.timeoutTimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: false)
     }
     
-    @objc func fireTimer() {
+    @objc public func fireTimer() {
         self.stop()
         self.timeoutTimer.invalidate()
         self.timeoutTimer = nil
