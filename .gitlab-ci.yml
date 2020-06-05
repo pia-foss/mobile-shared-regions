@@ -44,9 +44,7 @@ build:
   artifacts:
     when: always
     paths:
-      # Archive all release (non debug) builds
-      - "app/build/outputs/aar/*/release/*aar"
-      - "app/build/outputs/aar/*/debug/*aar"
+      - "app/build/outputs/aar/*aar"
 
 unitTests:
   stage: test
