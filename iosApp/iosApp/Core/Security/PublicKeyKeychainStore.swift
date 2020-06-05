@@ -32,7 +32,7 @@ public enum PublicKeyKeychainError: Error {
     
 }
 
-class PublicKeyKeychainStore: PublicKeySecureStore {
+public class PublicKeyKeychainStore: PublicKeySecureStore {
 
     private struct Entries {
         static let publicKey = "PIAPublicKey"
@@ -49,7 +49,7 @@ class PublicKeyKeychainStore: PublicKeySecureStore {
     }
     
     func setPublicKey(withData data: Data) -> SecKey? {
-        clearPubKey()
+        Self.clearPubKey()
         guard let publicKey = try? add(publicKeyWithIdentifier: Entries.publicKey, data: data) else {
             return nil
         }
@@ -109,7 +109,7 @@ class PublicKeyKeychainStore: PublicKeySecureStore {
     }
     
     /// Clear the public key
-    public func clearPubKey() {
+    public static func clearPubKey() {
         remove(publicKeyWithIdentifier: Entries.publicKey)
     }
     
