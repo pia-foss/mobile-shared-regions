@@ -40,6 +40,9 @@ public class PublicKeyKeychainStore: PublicKeySecureStore {
 
     var publicKey: SecKey?
     
+    public init() {
+    }
+    
     func publicKeyEntry() -> SecKey? {
         guard let publicKey = try? publicKey(withIdentifier: Entries.publicKey) else {
             return nil
@@ -49,7 +52,7 @@ public class PublicKeyKeychainStore: PublicKeySecureStore {
     }
     
     func setPublicKey(withData data: Data) -> SecKey? {
-        Self.clearPubKey()
+        self.clearPubKey()
         guard let publicKey = try? add(publicKeyWithIdentifier: Entries.publicKey, data: data) else {
             return nil
         }
@@ -109,7 +112,7 @@ public class PublicKeyKeychainStore: PublicKeySecureStore {
     }
     
     /// Clear the public key
-    public static func clearPubKey() {
+    public func clearPubKey() {
         remove(publicKeyWithIdentifier: Entries.publicKey)
     }
     
