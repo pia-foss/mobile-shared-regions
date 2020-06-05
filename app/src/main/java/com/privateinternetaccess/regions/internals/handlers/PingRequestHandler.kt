@@ -8,7 +8,7 @@ import kotlin.system.measureTimeMillis
 import java.net.InetAddress
 import java.io.IOException
 
-internal class PingHandler : PingRequest {
+internal class PingRequestHandler : PingRequest {
 
     companion object {
         const val TIMEOUT = 3000

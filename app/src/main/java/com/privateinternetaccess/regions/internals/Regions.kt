@@ -5,13 +5,13 @@ import com.privateinternetaccess.common.regions.RegionsAPI
 import com.privateinternetaccess.common.regions.RegionsCommonBuilder
 import com.privateinternetaccess.common.regions.RegionsProtocol
 import com.privateinternetaccess.common.regions.model.RegionsResponse
-import com.privateinternetaccess.regions.internals.handlers.PingHandler
+import com.privateinternetaccess.regions.internals.handlers.PingRequestHandler
 import com.privateinternetaccess.regions.internals.handlers.MessageVerificationHandler
 
 class Regions : RegionsAPI {
 
     private val regions: RegionsAPI = RegionsCommonBuilder()
-        .setPingRequestDependency(PingHandler())
+        .setPingRequestDependency(PingRequestHandler())
         .setMessageVerificatorDependency(MessageVerificationHandler())
         .build()
 
