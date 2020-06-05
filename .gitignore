@@ -15,7 +15,6 @@ zh-TW.zip
 .gradle
 build
 gradle
-gradlew
 gradlew.bat
 local.properties
 ovpnlibs
