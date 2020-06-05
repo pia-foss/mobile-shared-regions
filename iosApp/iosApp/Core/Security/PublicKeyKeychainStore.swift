@@ -49,7 +49,7 @@ class PublicKeyKeychainStore: PublicKeySecureStore {
     }
     
     func setPublicKey(withData data: Data) -> SecKey? {
-        remove(publicKeyWithIdentifier: Entries.publicKey)
+        clearPubKey()
         guard let publicKey = try? add(publicKeyWithIdentifier: Entries.publicKey, data: data) else {
             return nil
         }
@@ -106,6 +106,11 @@ class PublicKeyKeychainStore: PublicKeySecureStore {
 
         let status = SecItemDelete(query as CFDictionary)
         return (status == errSecSuccess)
+    }
+    
+    /// Clear the public key
+    public func clearPubKey() {
+        remove(publicKeyWithIdentifier: Entries.publicKey)
     }
     
 }
