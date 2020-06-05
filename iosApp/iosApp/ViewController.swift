@@ -10,6 +10,12 @@ class ViewController: UIViewController, PingRequest, MessageVerificator {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
+        let regionTask = RegionsTask()
+        regionTask.fetch { regions, error in
+            print("Valid response from server")
+        }
+        
+        /* SIMPLE USAGE EXAMPLE
         let region = RegionsBuilder()
             .setPingRequestDependency(pingRequestDependency: self)
             .setMessageVerificatorDependency(messageVerificatorDependency: self)
@@ -21,6 +27,7 @@ class ViewController: UIViewController, PingRequest, MessageVerificator {
                 print("PIAiOS. ping response: \(response) error: \(error)")
             }
         }
+ */
     }
     
     // MARK: - PingRequest

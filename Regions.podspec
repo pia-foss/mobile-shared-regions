@@ -18,6 +18,7 @@ Pod::Spec.new do |spec|
         p.preserve_paths        = "iosApp/iosApp/Core/*.modulemap"
         
         p.pod_target_xcconfig   = { "SWIFT_INCLUDE_PATHS" => "${PODS_TARGET_SRCROOT}/iosApp/iosApp/Core",
+                                    "HEADER_SEARCH_PATHS" => "${PODS_TARGET_SRCROOT}/iosApp/iosApp/Core",
                                     "APPLICATION_EXTENSION_API_ONLY" => "YES" }
 
     end
