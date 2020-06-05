@@ -1,18 +1,26 @@
 Pod::Spec.new do |spec|
-    spec.name                     = 'app'
+    spec.name                     = 'Regions'
     spec.version                  = '1.0.0'
     spec.homepage                 = 'https://www.privateinternetaccess.com'
     spec.source                   = { :git => "Not Published", :tag => "Cocoapods/#{spec.name}/#{spec.version}" }
-    spec.authors                  = ''
-    spec.license                  = ''
+    spec.authors                  = { "Jose Blaya" => "jose@privateinternetaccess.com", "Juan Docal" => "juan@privateinternetaccess.com" }
+    spec.license                  = { :type => "MIT", :file => "LICENSE" }
     spec.summary                  = 'Regions module testing'
 
-    spec.static_framework         = true
-    spec.vendored_frameworks      = "build/cocoapods/framework/Regions.framework"
-    spec.libraries                = "c++"
-    spec.module_name              = "#{spec.name}_umbrella"
+    spec.vendored_frameworks      = "app/build/cocoapods/framework/Regions.framework"
+    spec.ios.deployment_target    = "11.0"
 
-            
+    spec.subspec "Core" do |p|
+      
+        p.source_files = "Core", "iosApp/iosApp/Core/**/*.{h,m,swift}"
+        p.private_header_files  = "iosApp/iosApp/Core/**/*.h"
+        p.resources         = "iosApp/iosApp/Core/Resources/**/*"
+        p.preserve_paths        = "iosApp/iosApp/Core/*.modulemap"
+        
+        p.pod_target_xcconfig   = { "SWIFT_INCLUDE_PATHS" => "${PODS_TARGET_SRCROOT}/iosApp/iosApp/Core",
+                                    "APPLICATION_EXTENSION_API_ONLY" => "YES" }
+
+    end
 
     spec.pod_target_xcconfig = {
         'KOTLIN_TARGET[sdk=iphonesimulator*]' => 'ios_x64',
@@ -32,7 +40,7 @@ Pod::Spec.new do |spec|
             :script => <<-SCRIPT
                 set -ev
                 REPO_ROOT="$PODS_TARGET_SRCROOT"
-                "$REPO_ROOT/../gradlew" -p "$REPO_ROOT" :app:syncFramework \
+                "$REPO_ROOT/app/../gradlew" -p "$REPO_ROOT" :app:syncFramework \
                     -Pkotlin.native.cocoapods.target=$KOTLIN_TARGET \
                     -Pkotlin.native.cocoapods.configuration=$CONFIGURATION \
                     -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
