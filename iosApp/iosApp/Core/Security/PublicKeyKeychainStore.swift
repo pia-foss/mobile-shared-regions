@@ -30,8 +30,6 @@ public enum PublicKeyKeychainError: Error {
     /// Couldn't find entry.
     case notFound
     
-//    /// Returned entry has an unexpected type.
-//    case typeMismatch
 }
 
 class PublicKeyKeychainStore: PublicKeySecureStore {
@@ -68,7 +66,6 @@ class PublicKeyKeychainStore: PublicKeySecureStore {
         query[kSecAttrKeyClass as String] = kSecAttrKeyClassPublic
         query[kSecValueData as String] = data
 
-        // XXX
         query.removeValue(forKey: kSecAttrService as String)
 
         let status = SecItemAdd(query as CFDictionary, nil)
@@ -87,7 +84,6 @@ class PublicKeyKeychainStore: PublicKeySecureStore {
         query[kSecAttrKeyClass as String] = kSecAttrKeyClassPublic
         query[kSecReturnRef as String] = true
 
-        // XXX
         query.removeValue(forKey: kSecAttrService as String)
 
         var result: AnyObject?
@@ -95,10 +91,6 @@ class PublicKeyKeychainStore: PublicKeySecureStore {
         guard (status == errSecSuccess) else {
             throw PublicKeyKeychainError.notFound
         }
-//        guard let key = result as? SecKey else {
-//            throw KeychainError.typeMismatch
-//        }
-//        return key
         return result as! SecKey
     }
     
@@ -110,7 +102,6 @@ class PublicKeyKeychainStore: PublicKeySecureStore {
         query[kSecAttrKeyType as String] = kSecAttrKeyTypeRSA
         query[kSecAttrKeyClass as String] = kSecAttrKeyClassPublic
 
-        // XXX
         query.removeValue(forKey: kSecAttrService as String)
 
         let status = SecItemDelete(query as CFDictionary)

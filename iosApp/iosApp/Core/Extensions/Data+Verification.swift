@@ -118,7 +118,6 @@ extension Data {
         #else
             let signedData = sha256()
 
-//            var error: CFError?
             guard let transform = SecVerifyTransformCreate(publicKey, signature as CFData, nil) else {
                 return false
             }
