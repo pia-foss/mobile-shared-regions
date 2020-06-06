@@ -1,14 +1,15 @@
 import UIKit
-import app
+import Regions
 
 class ViewController: UIViewController, PingRequest, MessageVerificator {
-    
+        
     override func viewDidLoad() {
         super.viewDidLoad()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        
         let region = RegionsBuilder()
             .setPingRequestDependency(pingRequestDependency: self)
             .setMessageVerificatorDependency(messageVerificatorDependency: self)
