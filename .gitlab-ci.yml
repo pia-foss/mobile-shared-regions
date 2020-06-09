@@ -41,12 +41,14 @@ build:
   script:
     - ./gradlew bundleDebugAar
     - ./gradlew bundleReleaseAar
+    - ./gradlew iOSBinaries
   artifacts:
     when: always
     paths:
-      - "app/build/outputs/aar/*aar"
+      - "regions/build/outputs/aar/*aar"
+      - "regions/build/bin/iOS/*Framework"
 
-unitTests:
+tests:
   stage: test
   script:
     - ./gradlew test
