@@ -2,7 +2,7 @@ image: openjdk:8-jdk
 
 variables:
   ANDROID_COMPILE_SDK: "28"
-  ANDROID_BUILD_TOOLS: "30.0.0-rc2"
+  ANDROID_BUILD_TOOLS: "30.0.0"
   ANDROID_SDK_TOOLS:   "4333796"
   GIT_SUBMODULE_STRATEGY: normal
 
