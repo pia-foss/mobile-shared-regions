@@ -1,4 +1,4 @@
-package com.privateinternetaccess.regions.handlers
+package com.privateinternetaccess.regions.internals.handlers
 
 import com.privateinternetaccess.common.regions.MessageVerificator
 import android.util.Base64

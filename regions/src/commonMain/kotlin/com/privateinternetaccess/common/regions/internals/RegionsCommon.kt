@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlin.coroutines.CoroutineContext
 
-internal class Regions(
+public class RegionsCommon(
         private val pingDependency: PingRequest,
         private val messageVerificator: MessageVerificator
 ) : RegionsAPI, CoroutineScope {
@@ -64,10 +64,24 @@ internal class Regions(
     // endregion
 
     // region Private
+    private fun pingRequestsAsync(
+        protocol: RegionsProtocol,
+        callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
+    ) = launch(Dispatchers.Default) {
+        handlePingRequest(protocol, callback)
+    }
+
     private fun fetchAsync(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = launch {
-        val responseList = client.get<String>(ENDPOINT).split("\n\n")
+        handleFetchResponse(client.get(ENDPOINT), callback)
+    }
+
+    public suspend fun handleFetchResponse(
+        response: String,
+        callback: (response: RegionsResponse?, error: Error?) -> Unit
+    ) {
+        val responseList = response.split("\n\n")
         val json = responseList.first()
         val key = responseList.last()
 
@@ -83,27 +97,25 @@ internal class Regions(
         }
     }
 
-    private fun serialize(jsonResponse: String) =
+    public fun serialize(jsonResponse: String) =
             Json(JsonConfiguration(
                     ignoreUnknownKeys = true
             )).parse(RegionsResponse.serializer(), jsonResponse)
 
-    private fun pingRequestsAsync(
-            protocol: RegionsProtocol,
-            callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
-    ) = launch {
-        withContext(Dispatchers.Default) {
-            var error: Error? = null
-            var response = listOf<RegionLowerLatencyInformation>()
-            knownRegionsResponse?.let {
-                response = requestEndpointsLowerLatencies(protocol, it)
-            } ?: run {
-                error = Error("Unknown regions")
-            }
+    public suspend fun handlePingRequest(
+        protocol: RegionsProtocol,
+        callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
+    ) {
+        var error: Error? = null
+        var response = listOf<RegionLowerLatencyInformation>()
+        knownRegionsResponse?.let {
+            response = requestEndpointsLowerLatencies(protocol, it)
+        } ?: run {
+            error = Error("Unknown regions")
+        }
 
-            withContext(Dispatchers.Main) {
-                callback(response, error)
-            }
+        withContext(Dispatchers.Main) {
+            callback(response, error)
         }
     }
 
