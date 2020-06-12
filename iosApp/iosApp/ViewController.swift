@@ -24,7 +24,6 @@ class ViewController: UIViewController, PingRequest, MessageVerificator {
     }
     
     // MARK: - PingRequest
-
     func platformPingRequest(
         endpoints: [String : [String]],
         callback: @escaping ([String : [PingRequestPlatformPingResult]]) -> Void
