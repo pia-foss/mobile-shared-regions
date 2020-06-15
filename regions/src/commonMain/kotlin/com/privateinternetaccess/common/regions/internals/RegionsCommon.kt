@@ -24,6 +24,11 @@ public class RegionsCommon(
         private const val REQUEST_TIMEOUT_MS = 5000L
     }
 
+    private enum class RegionsState {
+        IDLE,
+        REQUESTING
+    }
+
     private data class RegionEndpointInformation(
             val region: String,
             val name: String,
@@ -40,6 +45,7 @@ public class RegionsCommon(
         }
     }
     private var knownRegionsResponse: RegionsResponse? = null
+    private var state = RegionsState.IDLE
 
     // region CoroutineScope
     override val coroutineContext: CoroutineContext
@@ -50,6 +56,11 @@ public class RegionsCommon(
     override fun fetch(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = runBlocking {
+        if (state == RegionsState.REQUESTING) {
+            callback(knownRegionsResponse, Error("Request already in progress"))
+            return@runBlocking
+        }
+        state = RegionsState.REQUESTING
         fetchAsync(callback)
         return@runBlocking
     }
@@ -58,6 +69,11 @@ public class RegionsCommon(
             protocol: RegionsProtocol,
             callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
     ) = runBlocking {
+        if (state == RegionsState.REQUESTING) {
+            callback(emptyList(), Error("Request already in progress"))
+            return@runBlocking
+        }
+        state = RegionsState.REQUESTING
         pingRequestsAsync(protocol, callback)
         return@runBlocking
     }
@@ -93,6 +109,7 @@ public class RegionsCommon(
         }
 
         withContext(Dispatchers.Main) {
+            state = RegionsState.IDLE
             callback(knownRegionsResponse, error)
         }
     }
@@ -115,6 +132,7 @@ public class RegionsCommon(
         }
 
         withContext(Dispatchers.Main) {
+            state = RegionsState.IDLE
             callback(response, error)
         }
     }
