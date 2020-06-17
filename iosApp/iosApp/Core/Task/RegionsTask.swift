@@ -27,7 +27,7 @@ public class RegionsTask {
     /// Makes the request against the API and return the list of regions
     public func fetch(_ callback: @escaping (([RegionsResponse.Region], KotlinError?) -> Void)) {
         
-        let regionBuilder = RegionsBuilder()
+        let regionBuilder = RegionsCommonBuilder()
             .setPingRequestDependency(pingRequestDependency: self)
             .setMessageVerificatorDependency(messageVerificatorDependency: self)
             .build()
