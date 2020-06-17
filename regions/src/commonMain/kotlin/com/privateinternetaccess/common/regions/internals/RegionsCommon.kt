@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlin.coroutines.CoroutineContext
 
-internal class Regions(
+public class RegionsCommon(
         private val pingDependency: PingRequest,
         private val messageVerificator: MessageVerificator
 ) : RegionsAPI, CoroutineScope {
@@ -22,6 +22,11 @@ internal class Regions(
     companion object {
         private const val ENDPOINT = "https://serverlist.piaservers.net/vpninfo/servers/new"
         private const val REQUEST_TIMEOUT_MS = 5000L
+    }
+
+    private enum class RegionsState {
+        IDLE,
+        REQUESTING
     }
 
     private data class RegionEndpointInformation(
@@ -40,6 +45,7 @@ internal class Regions(
         }
     }
     private var knownRegionsResponse: RegionsResponse? = null
+    private var state = RegionsState.IDLE
 
     // region CoroutineScope
     override val coroutineContext: CoroutineContext
@@ -50,6 +56,11 @@ internal class Regions(
     override fun fetch(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = runBlocking {
+        if (state == RegionsState.REQUESTING) {
+            callback(knownRegionsResponse, Error("Request already in progress"))
+            return@runBlocking
+        }
+        state = RegionsState.REQUESTING
         fetchAsync(callback)
         return@runBlocking
     }
@@ -58,16 +69,35 @@ internal class Regions(
             protocol: RegionsProtocol,
             callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
     ) = runBlocking {
+        if (state == RegionsState.REQUESTING) {
+            callback(emptyList(), Error("Request already in progress"))
+            return@runBlocking
+        }
+        state = RegionsState.REQUESTING
         pingRequestsAsync(protocol, callback)
         return@runBlocking
     }
     // endregion
 
     // region Private
+    private fun pingRequestsAsync(
+        protocol: RegionsProtocol,
+        callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
+    ) = launch(Dispatchers.Default) {
+        handlePingRequest(protocol, callback)
+    }
+
     private fun fetchAsync(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = launch {
-        val responseList = client.get<String>(ENDPOINT).split("\n\n")
+        handleFetchResponse(client.get(ENDPOINT), callback)
+    }
+
+    public suspend fun handleFetchResponse(
+        response: String,
+        callback: (response: RegionsResponse?, error: Error?) -> Unit
+    ) {
+        val responseList = response.split("\n\n")
         val json = responseList.first()
         val key = responseList.last()
 
@@ -79,31 +109,31 @@ internal class Regions(
         }
 
         withContext(Dispatchers.Main) {
+            state = RegionsState.IDLE
             callback(knownRegionsResponse, error)
         }
     }
 
-    private fun serialize(jsonResponse: String) =
+    public fun serialize(jsonResponse: String) =
             Json(JsonConfiguration(
                     ignoreUnknownKeys = true
             )).parse(RegionsResponse.serializer(), jsonResponse)
 
-    private fun pingRequestsAsync(
-            protocol: RegionsProtocol,
-            callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
-    ) = launch {
-        withContext(Dispatchers.Default) {
-            var error: Error? = null
-            var response = listOf<RegionLowerLatencyInformation>()
-            knownRegionsResponse?.let {
-                response = requestEndpointsLowerLatencies(protocol, it)
-            } ?: run {
-                error = Error("Unknown regions")
-            }
+    public suspend fun handlePingRequest(
+        protocol: RegionsProtocol,
+        callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
+    ) {
+        var error: Error? = null
+        var response = listOf<RegionLowerLatencyInformation>()
+        knownRegionsResponse?.let {
+            response = requestEndpointsLowerLatencies(protocol, it)
+        } ?: run {
+            error = Error("Unknown regions")
+        }
 
-            withContext(Dispatchers.Main) {
-                callback(response, error)
-            }
+        withContext(Dispatchers.Main) {
+            state = RegionsState.IDLE
+            callback(response, error)
         }
     }
 

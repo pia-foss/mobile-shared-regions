@@ -1,4 +1,4 @@
-package com.privateinternetaccess.regions.handlers
+package com.privateinternetaccess.regions.internals.handlers
 
 import com.privateinternetaccess.common.regions.PingRequest
 import com.privateinternetaccess.common.regions.PingRequest.PlatformPingResult
@@ -8,7 +8,7 @@ import kotlin.system.measureTimeMillis
 import java.net.InetAddress
 import java.io.IOException
 
-internal class PingHandler : PingRequest {
+internal class PingRequestHandler : PingRequest {
 
     companion object {
         const val TIMEOUT = 3000
