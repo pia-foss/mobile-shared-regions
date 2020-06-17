@@ -1,5 +1,5 @@
 Pod::Spec.new do |spec|
-    spec.name                     = 'Regions'
+    spec.name                     = 'PIARegions'
     spec.version                  = '1.0.0'
     spec.homepage                 = 'https://www.privateinternetaccess.com'
     spec.source                   = { :git => "Not Published", :tag => "Cocoapods/#{spec.name}/#{spec.version}" }
@@ -7,7 +7,7 @@ Pod::Spec.new do |spec|
     spec.license                  = { :type => "MIT", :file => "LICENSE" }
     spec.summary                  = 'Regions module testing'
 
-    spec.vendored_frameworks      = "app/build/cocoapods/framework/Regions.framework"
+    spec.vendored_frameworks      = "regions/build/cocoapods/framework/Regions.framework"
     spec.ios.deployment_target    = "11.0"
 
     spec.subspec "Core" do |p|
