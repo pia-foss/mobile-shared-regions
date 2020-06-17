@@ -11,7 +11,7 @@ class ViewController: UIViewController, PingRequest, MessageVerificator {
         super.viewDidAppear(animated)
         
         let regionTask = RegionsTask()
-        regionTask.fetch { regions, error in
+        regionTask.fetch { regions, jsonString, error in
             print("Valid response from server")
         }
         
