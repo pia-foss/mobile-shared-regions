@@ -24,6 +24,9 @@ import Regions
  
 public class RegionsTask {
 
+    public init() {}
+    private var verifiedResponse = ""
+    
     /// Makes the request against the API and return the list of regions
     public func fetch(_ callback: @escaping (([RegionsResponse.Region], KotlinError?) -> Void)) {
         
@@ -32,7 +35,7 @@ public class RegionsTask {
             .setMessageVerificatorDependency(messageVerificatorDependency: self)
             .build()
         
-        regionBuilder.fetch { (response, error) in
+        regionBuilder.fetch { [weak self] (response, error) in
             
             guard let response = response else {
                 callback([], error)
@@ -44,6 +47,34 @@ public class RegionsTask {
         }
 
     }
+    
+    /// Makes the request against the API and return the raw json data
+    /// TODO: Temp method to return the raw data. Once the legacy servers are removed from the App, we will use the Server object provided by the library
+    public func fetchRawData(_ callback: @escaping ((String, KotlinError?) -> Void)) {
+        
+        let regionBuilder = RegionsCommonBuilder()
+            .setPingRequestDependency(pingRequestDependency: self)
+            .setMessageVerificatorDependency(messageVerificatorDependency: self)
+            .build()
+        
+        regionBuilder.fetch { [weak self] (response, error) in
+            
+            guard let response = response else {
+                callback("", error)
+                return
+            }
+            
+            guard let rawData = self?.verifiedResponse else {
+                callback("", error)
+                return
+            }
+            
+            callback(rawData, error)
+            
+        }
+
+    }
+
     
 }
 
@@ -69,6 +100,12 @@ extension RegionsTask: PingRequest, MessageVerificator {
 
         let verifySignature = VerifySignature(json: message, signature: signature)
         let response = verifySignature.verify()
+        
+        if response {
+            verifiedResponse = message
+        } else {
+            verifiedResponse = ""
+        }
         
         return response
         
