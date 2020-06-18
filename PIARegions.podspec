@@ -2,7 +2,7 @@ Pod::Spec.new do |spec|
     spec.name                     = 'PIARegions'
     spec.version                  = '1.0.0'
     spec.homepage                 = 'https://www.privateinternetaccess.com'
-    s.source            		  = { :git => "https://github.com/pia-foss/mobile-common-regions.git", :tag => "v#{s.version}" }
+    spec.source            		  = { :git => "https://github.com/pia-foss/mobile-common-regions.git", :tag => "v#{s.version}" }
     spec.authors                  = { "Jose Blaya" => "jose@privateinternetaccess.com", "Juan Docal" => "juan@privateinternetaccess.com" }
     spec.license                  = { :type => "MIT", :file => "LICENSE" }
     spec.summary                  = 'Regions module testing'
