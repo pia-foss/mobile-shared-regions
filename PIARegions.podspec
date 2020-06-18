@@ -7,7 +7,7 @@ Pod::Spec.new do |spec|
     spec.license                  = { :type => "MIT", :file => "LICENSE" }
     spec.summary                  = 'Regions module testing'
 
-    s.prepare_command = <<-CMD
+    spec.prepare_command = <<-CMD
         ./create-framework.sh
     CMD
 
