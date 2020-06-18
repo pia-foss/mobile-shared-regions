@@ -25,7 +25,8 @@ Pod::Spec.new do |spec|
 
     spec.subspec "regions" do |p|
       
-        p.source_files = "regions/**/*"
+        p.resources = "regions/**/*"
+        p.exclude_files = ['regions/Info.plist']
 
     end
 
