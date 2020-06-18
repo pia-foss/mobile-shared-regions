@@ -36,7 +36,7 @@ Pod::Spec.new do |spec|
 
     end
 
-    spec.source_files = "gradlew"
+    spec.source_files = "gradlew", "regions-project.iml", "settings.gradle", "local.properties", "gradle.properties", "build.gradle"
 
     spec.pod_target_xcconfig = {
         'KOTLIN_TARGET[sdk=iphonesimulator*]' => 'ios_x64',
@@ -56,7 +56,7 @@ Pod::Spec.new do |spec|
             :script => <<-SCRIPT
                 set -ev
                 REPO_ROOT="$PODS_TARGET_SRCROOT"
-                "$REPO_ROOT/regions/../gradlew" --stacktrace --scan -p "$REPO_ROOT" :regions:syncFramework \
+                "$REPO_ROOT/regions/../gradlew" -p "$REPO_ROOT" :regions:syncFramework \
                     -Pkotlin.native.cocoapods.target=$KOTLIN_TARGET \
                     -Pkotlin.native.cocoapods.configuration=$CONFIGURATION \
                     -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
