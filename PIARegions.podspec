@@ -7,6 +7,10 @@ Pod::Spec.new do |spec|
     spec.license                  = { :type => "MIT", :file => "LICENSE" }
     spec.summary                  = 'Regions module testing'
 
+    s.prepare_command = <<-CMD
+        ./create-framework.sh
+    CMD
+
     spec.ios.vendored_frameworks  = "regions/build/cocoapods/framework/Regions.framework"
     spec.ios.deployment_target    = "11.0"
 
@@ -48,21 +52,4 @@ Pod::Spec.new do |spec|
         'KOTLIN_TARGET[sdk=macosx*]' => 'macos_x64'
     }
 
-    spec.script_phases = [
-        {
-            :name => 'Build app',
-            :execution_position => :before_compile,
-            :shell_path => '/bin/sh',
-            :script => <<-SCRIPT
-                set -ev
-                REPO_ROOT="$PODS_TARGET_SRCROOT"
-                "$REPO_ROOT/regions/../gradlew" -p "$REPO_ROOT" :regions:syncFramework \
-                    -Pkotlin.native.cocoapods.target=$KOTLIN_TARGET \
-                    -Pkotlin.native.cocoapods.configuration=$CONFIGURATION \
-                    -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
-                    -Pkotlin.native.cocoapods.paths.headers="$HEADER_SEARCH_PATHS" \
-                    -Pkotlin.native.cocoapods.paths.frameworks="$FRAMEWORK_SEARCH_PATHS"
-            SCRIPT
-        }
-    ]
 end
