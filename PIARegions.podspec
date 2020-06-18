@@ -60,9 +60,6 @@ Pod::Spec.new do |spec|
                     -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
                     -Pkotlin.native.cocoapods.paths.headers="$HEADER_SEARCH_PATHS" \
                     -Pkotlin.native.cocoapods.paths.frameworks="$FRAMEWORK_SEARCH_PATHS"
-
-                install_framework "$REPO_ROOT/regions/build/cocoapods/framework/Regions.framework"
-
             SCRIPT
         }
     ]
