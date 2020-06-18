@@ -56,7 +56,7 @@ Pod::Spec.new do |spec|
             :script => <<-SCRIPT
                 set -ev
                 REPO_ROOT="$PODS_TARGET_SRCROOT"
-                "$REPO_ROOT/regions/../gradlew" -p "$REPO_ROOT" :regions:syncFramework \
+                "$REPO_ROOT/regions/../gradlew" -p --debug "$REPO_ROOT" :regions:syncFramework \
                     -Pkotlin.native.cocoapods.target=$KOTLIN_TARGET \
                     -Pkotlin.native.cocoapods.configuration=$CONFIGURATION \
                     -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
