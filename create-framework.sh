@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-"$regions/../gradlew" :regions:syncFramework \
+"regions/../gradlew" :regions:syncFramework \
     -Pkotlin.native.cocoapods.target=$KOTLIN_TARGET \
     -Pkotlin.native.cocoapods.configuration=$CONFIGURATION \
     -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
