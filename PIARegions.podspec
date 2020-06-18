@@ -23,7 +23,13 @@ Pod::Spec.new do |spec|
 
     end
 
-    spec.source_files = "regions/**/*", "gradlew"
+    spec.subspec "regions" do |p|
+      
+        p.source_files = "regions/**/*"
+
+    end
+
+    spec.source_files = "gradlew"
 
     spec.pod_target_xcconfig = {
         'KOTLIN_TARGET[sdk=iphonesimulator*]' => 'ios_x64',
