@@ -7,7 +7,7 @@ Pod::Spec.new do |spec|
     spec.license                  = { :type => "MIT", :file => "LICENSE" }
     spec.summary                  = 'Regions module testing'
 
-    spec.vendored_frameworks      = "regions/build/cocoapods/framework/Regions.framework"
+    spec.ios.vendored_frameworks  = "regions/build/cocoapods/framework/Regions.framework"
     spec.ios.deployment_target    = "11.0"
 
     spec.subspec "Core" do |p|
