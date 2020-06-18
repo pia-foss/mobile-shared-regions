@@ -25,8 +25,14 @@ Pod::Spec.new do |spec|
 
     spec.subspec "regions" do |p|
       
-        p.preserve_paths = "regions/**/*"
+        p.source_files = "regions/**/*"
         p.exclude_files = ['regions/Info.plist']
+
+    end
+
+    spec.subspec "gradle" do |p|
+      
+        p.source_files = "gradle/**/*"
 
     end
 
