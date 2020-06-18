@@ -1,5 +1,5 @@
 Pod::Spec.new do |spec|
-    spec.name                     = 'Regions'
+    spec.name                     = 'PIARegions'
     spec.version                  = '1.0.0'
     spec.homepage                 = 'https://www.privateinternetaccess.com'
     spec.source                   = { :git => "Not Published", :tag => "Cocoapods/#{spec.name}/#{spec.version}" }
@@ -7,7 +7,7 @@ Pod::Spec.new do |spec|
     spec.license                  = { :type => "MIT", :file => "LICENSE" }
     spec.summary                  = 'Regions module testing'
 
-    spec.vendored_frameworks      = "app/build/cocoapods/framework/Regions.framework"
+    spec.vendored_frameworks      = "regions/build/cocoapods/framework/Regions.framework"
     spec.ios.deployment_target    = "11.0"
 
     spec.subspec "Core" do |p|
@@ -18,6 +18,7 @@ Pod::Spec.new do |spec|
         p.preserve_paths        = "iosApp/iosApp/Core/*.modulemap"
         
         p.pod_target_xcconfig   = { "SWIFT_INCLUDE_PATHS" => "${PODS_TARGET_SRCROOT}/iosApp/iosApp/Core",
+                                    "HEADER_SEARCH_PATHS" => "${PODS_TARGET_SRCROOT}/iosApp/iosApp/Core",
                                     "APPLICATION_EXTENSION_API_ONLY" => "YES" }
 
     end
@@ -40,7 +41,7 @@ Pod::Spec.new do |spec|
             :script => <<-SCRIPT
                 set -ev
                 REPO_ROOT="$PODS_TARGET_SRCROOT"
-                "$REPO_ROOT/app/../gradlew" -p "$REPO_ROOT" :app:syncFramework \
+                "$REPO_ROOT/regions/../gradlew" -p "$REPO_ROOT" :regions:syncFramework \
                     -Pkotlin.native.cocoapods.target=$KOTLIN_TARGET \
                     -Pkotlin.native.cocoapods.configuration=$CONFIGURATION \
                     -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
