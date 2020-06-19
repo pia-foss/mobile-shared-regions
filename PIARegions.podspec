@@ -23,6 +23,13 @@ Pod::Spec.new do |spec|
 
     end
 
+    spec.subspec "regions" do |p|
+      
+        p.source_files = "regions/**/*"
+        p.exclude_files = ['regions/Info.plist', 'regions/build/cocoapods/framework/Regions.framework', 'regions/build/bin/**/*']
+
+    end
+
     spec.subspec "gradle" do |p|
       
         p.source_files = "gradle/**/*"
