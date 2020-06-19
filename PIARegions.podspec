@@ -6,9 +6,9 @@ Pod::Spec.new do |spec|
     spec.authors                  = { "Jose Blaya" => "jose@privateinternetaccess.com", "Juan Docal" => "juan@privateinternetaccess.com" }
     spec.license                  = { :type => "MIT", :file => "LICENSE" }
     spec.summary                  = 'Regions module testing'
-
-    spec.vendored_frameworks      = "regions/build/cocoapods/framework/Regions.framework"
     spec.ios.deployment_target    = "11.0"
+
+    spec.ios.vendored_frameworks  = "regions/build/cocoapods/framework/Regions.framework"
 
     spec.subspec "Core" do |p|
       
@@ -22,6 +22,21 @@ Pod::Spec.new do |spec|
                                     "APPLICATION_EXTENSION_API_ONLY" => "YES" }
 
     end
+
+    spec.subspec "regions" do |p|
+      
+        p.source_files = "regions/**/*"
+        p.exclude_files = ['regions/Info.plist', 'regions/build/cocoapods/framework/Regions.framework']
+
+    end
+
+    spec.subspec "gradle" do |p|
+      
+        p.source_files = "gradle/**/*"
+
+    end
+
+    spec.source_files = "gradlew", "regions-project.iml", "settings.gradle", "local.properties", "gradle.properties", "build.gradle"
 
     spec.pod_target_xcconfig = {
         'KOTLIN_TARGET[sdk=iphonesimulator*]' => 'ios_x64',
@@ -50,4 +65,6 @@ Pod::Spec.new do |spec|
             SCRIPT
         }
     ]
+
+
 end

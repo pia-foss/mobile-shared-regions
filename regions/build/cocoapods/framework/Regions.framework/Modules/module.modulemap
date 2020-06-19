@@ -1,0 +1,6 @@
+framework module Regions {
+    umbrella header "Regions.h"
+
+    export *
+    module * { export * }
+}
