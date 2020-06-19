@@ -8,11 +8,6 @@ Pod::Spec.new do |spec|
     spec.summary                  = 'Regions module testing'
     spec.ios.deployment_target    = "11.0"
 
-
-    spec.prepare_command = <<-CMD
-        ./create-framework.sh
-    CMD
-
     spec.ios.vendored_frameworks  = "regions/build/cocoapods/framework/Regions.framework"
 
     spec.subspec "Core" do |p|

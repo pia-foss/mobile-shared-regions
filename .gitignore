@@ -38,7 +38,7 @@ fastlane/README.md
 fastlane/report.xml
 fastlane/test_output
 fastlane/review_information/demo_*
-build
+#build
 dist
 apple_dist
 Preview.html
