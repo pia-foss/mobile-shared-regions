@@ -26,7 +26,7 @@ Pod::Spec.new do |spec|
     spec.subspec "regions" do |p|
       
         p.source_files = "regions/**/*"
-        p.exclude_files = ['regions/Info.plist']
+        p.exclude_files = ['regions/Info.plist', 'regions/build/cocoapods/framework/Regions.framework']
 
     end
 
