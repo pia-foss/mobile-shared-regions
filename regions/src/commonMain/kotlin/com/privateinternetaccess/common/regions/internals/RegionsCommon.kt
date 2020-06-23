@@ -55,27 +55,29 @@ public class RegionsCommon(
     // region RegionsAPI
     override fun fetch(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
-    ) = runBlocking {
+    ) {
         if (state == RegionsState.REQUESTING) {
             callback(knownRegionsResponse, Error("Request already in progress"))
-            return@runBlocking
+            return
         }
         state = RegionsState.REQUESTING
-        fetchAsync(callback)
-        return@runBlocking
+        runBlocking {
+            fetchAsync(callback)
+        }
     }
 
     override fun pingRequests(
             protocol: RegionsProtocol,
             callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
-    ) = runBlocking {
+    ) {
         if (state == RegionsState.REQUESTING) {
             callback(emptyList(), Error("Request already in progress"))
-            return@runBlocking
+            return
         }
         state = RegionsState.REQUESTING
-        pingRequestsAsync(protocol, callback)
-        return@runBlocking
+        runBlocking {
+            pingRequestsAsync(protocol, callback)
+        }
     }
     // endregion
 
