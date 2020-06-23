@@ -24,17 +24,19 @@ import Regions
  
 public class RegionsTask {
 
-    public init() {}
+    private var regionsApi: RegionsAPI? = nil
+    
+    public init() {
+        self.regionsApi = RegionsCommonBuilder()
+            .setPingRequestDependency(pingRequestDependency: self)
+            .setMessageVerificatorDependency(messageVerificatorDependency: self)
+            .build()
+    }
     
     /// Makes the request against the API and return the list of regions
     public func fetch(_ callback: @escaping (([RegionsResponse.Region], String, KotlinError?) -> Void)) {
         
-        let regionBuilder = RegionsCommonBuilder()
-            .setPingRequestDependency(pingRequestDependency: self)
-            .setMessageVerificatorDependency(messageVerificatorDependency: self)
-            .build()
-        
-        regionBuilder.fetch { [weak self] (response, error) in
+        self.regionsApi?.fetch { [weak self] (response, error) in
             
             guard let response = response else {
                 callback([], "", error)
