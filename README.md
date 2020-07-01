@@ -18,6 +18,7 @@ With this library, clients from iOS and Android can communicate easily with the 
  - ADB installed
  - NDK (latest)
  - Android 4.1+
+ - Cocoapods
 
 #### Download Codebase
 Using the terminal:
@@ -29,6 +30,24 @@ type in what folder you want to put in without the **
 #### Building
 
 Once the project is cloned, you can build the binaries by running `./gradlew bundleDebugAar` or `./gradlew bundleReleaseAar` for Android. And, `./gradlew iOSBinaries` for iOS. You can find the binaries at `[PROJECT_DIR]/regions/build/outputs/aar` and `[PROJECT_DIR]/regions/build/bin/iOS` accordingly
+
+## Usage
+
+### Android 
+
+TBC
+
+### iOS
+
+To use this project in your iOS apps, just add the library as a pod
+
+`pod "PIARegions", :git => "http://github.com/pia-foss/mobile-common-regions`
+
+After the pod install is completed, when you run your app, the PIARegions pod will generate the `Regions.framework`.
+
+### Add new classes or change iOS project structure
+
+When adding new classes or if you need to change the project structure of the `PIARegions` module you will need to update the `PIARegions.podspec` file. This file is located in the root path of the project.
 
 ## Documentation
 
