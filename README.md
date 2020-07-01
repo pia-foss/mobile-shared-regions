@@ -35,7 +35,13 @@ Once the project is cloned, you can build the binaries by running `./gradlew bun
 
 ### Android 
 
-TBC
+To use this project in your Android apps, you need to import the generated AAR module and include the following dependencies in your application's gradle.
+
+`
+implementation 'io.ktor:ktor-client-android:1.3.2'
+implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.7'
+implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0'
+`
 
 ### iOS
 
