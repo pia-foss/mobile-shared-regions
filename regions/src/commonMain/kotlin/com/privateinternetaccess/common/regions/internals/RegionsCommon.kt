@@ -92,7 +92,14 @@ public class RegionsCommon(
     private fun fetchAsync(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = launch {
-        handleFetchResponse(client.get(ENDPOINT), callback)
+        try {
+            handleFetchResponse(client.get(ENDPOINT), callback)
+        } catch (exception: Exception) {
+            withContext(Dispatchers.Main) {
+                state = RegionsState.IDLE
+                callback(knownRegionsResponse, Error("Error fetching next generation servers: ${exception.message}"))
+            }
+        }
     }
 
     public suspend fun handleFetchResponse(

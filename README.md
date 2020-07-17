@@ -6,7 +6,75 @@ Private Internet Access is the world's leading consumer VPN service. At Private 
 
 # Regions common library for Android and Apple platforms
 
-With this library, mobile apps can easily communicate with the Private Internet Access region's services.
+With this library, clients from iOS and Android can communicate easily with the Private Internet Access region's services.
+
+## Installation
+
+### Requirements
+ - Git (latest)
+ - Xcode (latest)
+ - IntelliJ IDEA (latest)
+ - Gradle (latest)
+ - ADB installed
+ - NDK (latest)
+ - Android 4.1+
+ - Cocoapods
+
+#### Download Codebase
+Using the terminal:
+
+`git clone https://github.com/pia-foss/mobile-common-regions.git *folder-name*`
+
+type in what folder you want to put in without the **
+
+#### Building
+
+Once the project is cloned, you can build the binaries by running `./gradlew bundleDebugAar` or `./gradlew bundleReleaseAar` for Android. And, `./gradlew iOSBinaries` for iOS. You can find the binaries at `[PROJECT_DIR]/regions/build/outputs/aar` and `[PROJECT_DIR]/regions/build/bin/iOS` accordingly
+
+## Usage
+
+### Android 
+
+To use this project in your Android apps, you need to import the generated AAR module and include the following dependencies in your application's gradle.
+
+`
+implementation 'io.ktor:ktor-client-android:1.3.2'
+implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.7'
+implementation 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0'
+`
+
+### iOS
+
+To use this project in your iOS apps, just add the library as a pod
+
+`pod "PIARegions", :git => "http://github.com/pia-foss/mobile-common-regions`
+
+After the pod install is completed, when you run your app, the PIARegions pod will generate the `Regions.framework`.
+
+### Add new classes or change iOS project structure
+
+When adding new classes or if you need to change the project structure of the `PIARegions` module you will need to update the `PIARegions.podspec` file. This file is located in the root path of the project.
+
+## Documentation
+
+#### Architecture
+
+The library is formed by two layers. The common layer. Containing the business logic for all platforms. And, the bridging layer. Containing the platform specific logic being injected into the common layer.
+
+Code structure via packages:
+
+* `commonMain` - Common business logic.
+* `main` - Android's bridging layer, providing the platform specific dependencies.
+* `iosApp` - iOS's bridging layer, providing the platform specific dependencies.
+
+#### Significant Classes and Interfaces
+
+* `RegionsBuilder` - Public builder class responsible for creating an instance of an object conforming to the `RegionsAPI` interface for the client side.
+* `RegionsCommonBuilder` - Internal builder class responsible for creating an instance of an object conforming to the `RegionsAPI` interface and injecting the platform specific dependencies.
+* `RegionsAPI` - Public interface defining the API to be offered by the library to the clients.
+* `RegionsResponse` - Public data class representing the serialized data from our regions service.
+* `MessageVerificationHandler` - Handler conforming to the interface `MessageVerificator` and providing the defined capabilities to the common logic.
+* `PingRequestHandler` - Handler conforming to the interface `PingRequest` and providing the defined capabilities to the common logic.
 
 ## Contributing
 

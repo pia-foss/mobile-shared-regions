@@ -2,6 +2,7 @@ package com.privateinternetaccess.regions.internals.handlers
 
 import com.privateinternetaccess.common.regions.PingRequest
 import com.privateinternetaccess.common.regions.PingRequest.PlatformPingResult
+import com.privateinternetaccess.regions.REGIONS_PING_TIMEOUT
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
@@ -9,10 +10,6 @@ import java.net.InetAddress
 import java.io.IOException
 
 internal class PingRequestHandler : PingRequest {
-
-    companion object {
-        const val TIMEOUT = 3000
-    }
 
     override fun platformPingRequest(
         endpoints: Map<String, List<String>>,
@@ -44,7 +41,7 @@ internal class PingRequestHandler : PingRequest {
     private fun ping(endpoint: String): Error? {
         var error: Error? = null
         try {
-            InetAddress.getByName(endpoint).isReachable(TIMEOUT)
+            InetAddress.getByName(endpoint).isReachable(REGIONS_PING_TIMEOUT)
         } catch (e: IOException) {
             e.printStackTrace()
             error = Error("Error reaching endpoint: $endpoint exception: $e")
