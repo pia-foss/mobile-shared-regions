@@ -95,7 +95,10 @@ public class RegionsCommon(
         try {
             handleFetchResponse(client.get(ENDPOINT), callback)
         } catch (exception: Exception) {
-            callback(knownRegionsResponse, Error("Error fetching next generation servers: ${exception.message}"))
+            withContext(Dispatchers.Main) {
+                state = RegionsState.IDLE
+                callback(knownRegionsResponse, Error("Error fetching next generation servers: ${exception.message}"))
+            }
         }
     }
 
