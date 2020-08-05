@@ -100,6 +100,13 @@ public class RegionsCommon(
                 callback(knownRegionsResponse, Error("Error fetching next generation servers: ${exception.message}"))
             }
         }
+        catch (throwable: Throwable) {
+            // Temporary catch of throwable. Waiting for Ktor's release with Exceptions.
+            withContext(Dispatchers.Main) {
+                state = RegionsState.IDLE
+                callback(knownRegionsResponse, Error("Error fetching next generation servers: ${throwable.message}"))
+            }
+        }
     }
 
     public suspend fun handleFetchResponse(
