@@ -96,7 +96,7 @@ public class RegionsCommon(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = launch {
 
-        val completionCallback = { response: RegionsResponse?, error: Error? ->
+        val completionCallback: (RegionsResponse?, Error?) -> Unit = { response: RegionsResponse?, error: Error? ->
             launch {
                 withContext(Dispatchers.Main) {
                     state = RegionsState.IDLE
@@ -109,9 +109,7 @@ public class RegionsCommon(
             url(ENDPOINT)
         }
         response.first?.let {
-            handleFetchResponse(it) { response, error ->
-                completionCallback(response, error)
-            }
+            handleFetchResponse(it, completionCallback)
         }
         response.second?.let {
             completionCallback(null, Error(it.message))
