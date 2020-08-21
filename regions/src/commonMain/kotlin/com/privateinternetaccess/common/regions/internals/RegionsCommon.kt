@@ -8,7 +8,10 @@ import com.privateinternetaccess.common.regions.MessageVerificator
 import com.privateinternetaccess.common.regions.model.RegionsResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.features.HttpTimeout
-import io.ktor.client.request.get
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -92,20 +95,28 @@ public class RegionsCommon(
     private fun fetchAsync(
             callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = launch {
-        try {
-            handleFetchResponse(client.get(ENDPOINT), callback)
-        } catch (exception: Exception) {
-            withContext(Dispatchers.Main) {
-                state = RegionsState.IDLE
-                callback(knownRegionsResponse, Error("Error fetching next generation servers: ${exception.message}"))
+
+        val completionCallback = { response: RegionsResponse?, error: Error? ->
+            launch {
+                withContext(Dispatchers.Main) {
+                    state = RegionsState.IDLE
+                    callback(response, error)
+                }
             }
         }
-        catch (throwable: Throwable) {
-            // Temporary catch of throwable. Waiting for Ktor's release with Exceptions.
-            withContext(Dispatchers.Main) {
-                state = RegionsState.IDLE
-                callback(knownRegionsResponse, Error("Error fetching next generation servers: ${throwable.message}"))
-            }
+
+        val response = client.getCatching<Pair<HttpResponse?, Exception?>> {
+            url(ENDPOINT)
+        }
+        response.first?.let {
+            it.content.readUTF8Line()?.let { content ->
+                handleFetchResponse(content) { response, error ->
+                    completionCallback(response, error)
+                }
+            } ?: completionCallback(null, Error("Invalid request response"))
+        }
+        response.second?.let {
+            completionCallback(null, Error(it.message))
         }
     }
 
@@ -212,5 +223,26 @@ public class RegionsCommon(
         }
         return result
     }
-// endregion
+    // endregion
+
+    // region HttpClient extensions
+    private suspend inline fun <reified T> HttpClient.getCatching(
+            block: HttpRequestBuilder.() -> Unit = {}
+    ): Pair<HttpResponse?, Exception?> {
+        var exception: Exception? = null
+        var response: HttpResponse? = null
+        try {
+            response = request {
+                method = HttpMethod.Get
+                apply(block)
+            }
+        } catch (e: Exception) {
+            exception = e
+        } catch (throwable: Throwable) {
+            // Temporary catch of throwable. Waiting for Ktor's release with Exceptions.
+            exception = Exception(throwable.message)
+        }
+        return Pair(response, exception)
+    }
+    // endregion
 }

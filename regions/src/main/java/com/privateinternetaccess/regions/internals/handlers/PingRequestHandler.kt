@@ -31,7 +31,7 @@ internal class PingRequestHandler : PingRequest {
                         error = ping(it)
                     }
                     latency = error?.let {
-                        0L
+                        9999L
                     } ?: latency
                     regionEndpointsResults.add(PlatformPingResult(it, latency))
                     result[region] = regionEndpointsResults
