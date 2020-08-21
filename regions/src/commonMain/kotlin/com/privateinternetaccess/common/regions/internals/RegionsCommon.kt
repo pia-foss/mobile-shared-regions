@@ -105,15 +105,13 @@ public class RegionsCommon(
             }
         }
 
-        val response = client.getCatching<Pair<HttpResponse?, Exception?>> {
+        val response = client.getCatching<Pair<String?, Exception?>> {
             url(ENDPOINT)
         }
         response.first?.let {
-            it.content.readUTF8Line()?.let { content ->
-                handleFetchResponse(content) { response, error ->
-                    completionCallback(response, error)
-                }
-            } ?: completionCallback(null, Error("Invalid request response"))
+            handleFetchResponse(it) { response, error ->
+                completionCallback(response, error)
+            }
         }
         response.second?.let {
             completionCallback(null, Error(it.message))
@@ -228,9 +226,9 @@ public class RegionsCommon(
     // region HttpClient extensions
     private suspend inline fun <reified T> HttpClient.getCatching(
             block: HttpRequestBuilder.() -> Unit = {}
-    ): Pair<HttpResponse?, Exception?> {
+    ): Pair<String?, Exception?> {
         var exception: Exception? = null
-        var response: HttpResponse? = null
+        var response: String? = null
         try {
             response = request {
                 method = HttpMethod.Get
