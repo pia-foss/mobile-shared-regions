@@ -6,6 +6,7 @@ import com.privateinternetaccess.common.regions.RegionsAPI
 import com.privateinternetaccess.common.regions.RegionsProtocol
 import com.privateinternetaccess.common.regions.MessageVerificator
 import com.privateinternetaccess.common.regions.model.RegionsResponse
+import com.privateinternetaccess.common.regions.model.TranslationsGeoResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.features.HttpTimeout
 import io.ktor.client.request.*
@@ -42,6 +43,7 @@ public class RegionsCommon(
             val portForwarding: Boolean
     )
 
+    private val json = Json(JsonConfiguration(ignoreUnknownKeys = true))
     private val client = HttpClient() {
         install(HttpTimeout) {
             requestTimeoutMillis = REQUEST_TIMEOUT_MS
@@ -54,18 +56,25 @@ public class RegionsCommon(
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main
     // endregion
+    override fun fetchLocalization(callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit) {
+        if (state == RegionsState.REQUESTING) {
+            callback(null, Error("Request already in progress"))
+            return
+        }
+        state = RegionsState.REQUESTING
+        runBlocking {
+            fetchLocalizationAsync(callback)
+        }
+    }
 
-    // region RegionsAPI
-    override fun fetch(
-            callback: (response: RegionsResponse?, error: Error?) -> Unit
-    ) {
+    override fun fetchRegions(callback: (response: RegionsResponse?, error: Error?) -> Unit) {
         if (state == RegionsState.REQUESTING) {
             callback(knownRegionsResponse, Error("Request already in progress"))
             return
         }
         state = RegionsState.REQUESTING
         runBlocking {
-            fetchAsync(callback)
+            fetchRegionsAsync(callback)
         }
     }
 
@@ -92,10 +101,30 @@ public class RegionsCommon(
         handlePingRequest(protocol, callback)
     }
 
-    private fun fetchAsync(
-            callback: (response: RegionsResponse?, error: Error?) -> Unit
-    ) = launch {
+    private fun fetchLocalizationAsync(callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit) = launch {
+        val completionCallback: (TranslationsGeoResponse?, Error?) -> Unit = { response: TranslationsGeoResponse?, error: Error? ->
+            launch {
+                withContext(Dispatchers.Main) {
+                    state = RegionsState.IDLE
+                    callback(response, error)
+                }
+            }
+        }
 
+        val response = client.getCatching<Pair<String?, Exception?>> {
+            url("http://164.90.215.141:8088/translations")
+            header("Authorization", "Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVmM2QzNWExYjY3ODZiMDAxM2Y2MTJmNiIsImlhdCI6MTU5Nzg0Njk0OH0.WT5r40obfxkohs3867eu2w8wKwPyVzgo5i3-NAWuPPA")
+        }
+        response.first?.let {
+            val serializedLocalization = json.parse(TranslationsGeoResponse.serializer(), it)
+            completionCallback(serializedLocalization, null)
+        }
+        response.second?.let {
+            completionCallback(null, Error(it.message))
+        }
+    }
+
+    private fun fetchRegionsAsync(callback: (response: RegionsResponse?, error: Error?) -> Unit) = launch {
         val completionCallback: (RegionsResponse?, Error?) -> Unit = { response: RegionsResponse?, error: Error? ->
             launch {
                 withContext(Dispatchers.Main) {
@@ -109,14 +138,14 @@ public class RegionsCommon(
             url(ENDPOINT)
         }
         response.first?.let {
-            handleFetchResponse(it, completionCallback)
+            handleFetchRegionsResponse(it, completionCallback)
         }
         response.second?.let {
             completionCallback(null, Error(it.message))
         }
     }
 
-    public suspend fun handleFetchResponse(
+    public suspend fun handleFetchRegionsResponse(
         response: String,
         callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) {
@@ -126,7 +155,7 @@ public class RegionsCommon(
 
         var error: Error? = null
         if (messageVerificator.verifyMessage(json, key)) {
-            knownRegionsResponse = serialize(json)
+            knownRegionsResponse = serializeRegions(json)
         } else {
             error = Error("Invalid signature")
         }
@@ -137,10 +166,8 @@ public class RegionsCommon(
         }
     }
 
-    public fun serialize(jsonResponse: String) =
-            Json(JsonConfiguration(
-                    ignoreUnknownKeys = true
-            )).parse(RegionsResponse.serializer(), jsonResponse)
+    public fun serializeRegions(jsonResponse: String) =
+            json.parse(RegionsResponse.serializer(), jsonResponse)
 
     public suspend fun handlePingRequest(
         protocol: RegionsProtocol,
