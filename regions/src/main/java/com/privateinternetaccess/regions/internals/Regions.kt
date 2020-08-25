@@ -5,6 +5,7 @@ import com.privateinternetaccess.common.regions.RegionsAPI
 import com.privateinternetaccess.common.regions.RegionsCommonBuilder
 import com.privateinternetaccess.common.regions.RegionsProtocol
 import com.privateinternetaccess.common.regions.model.RegionsResponse
+import com.privateinternetaccess.common.regions.model.TranslationsGeoResponse
 import com.privateinternetaccess.regions.internals.handlers.PingRequestHandler
 import com.privateinternetaccess.regions.internals.handlers.MessageVerificationHandler
 
@@ -15,11 +16,11 @@ class Regions : RegionsAPI {
         .setMessageVerificatorDependency(MessageVerificationHandler())
         .build()
 
-    // region RegionsAPI
-    override fun fetch(
-        callback: (response: RegionsResponse?, error: Error?) -> Unit
-    ) {
-        regions.fetch(callback)
+    override fun fetchLocalization(callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit) {
+        regions.fetchLocalization(callback)
+    }
+    override fun fetchRegions(callback: (response: RegionsResponse?, error: Error?) -> Unit) {
+        regions.fetchRegions(callback)
     }
 
     override fun pingRequests(
