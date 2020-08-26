@@ -36,7 +36,7 @@ public class RegionsTask {
     /// Makes the request against the API and return the list of regions
     public func fetch(_ callback: @escaping (([RegionsResponse.Region], String, KotlinError?) -> Void)) {
         
-        self.regionsApi?.fetch { [weak self] (response, error) in
+        self.regionsApi?.fetchRegions { (response, error) in
             
             guard let response = response else {
                 callback([], "", error)
@@ -46,6 +46,21 @@ public class RegionsTask {
             let jsonString = RegionsUtils().stringify(regionsResponse: response)
             
             callback(response.regions, jsonString, error)
+            
+        }
+
+    }
+    
+    public func fetchLocalization(_ callback: @escaping ((TranslationsGeoResponse?, KotlinError?) -> Void)) {
+        
+        self.regionsApi?.fetchLocalization { (response, error) in
+            
+            guard let response = response else {
+                callback(nil, error)
+                return
+            }
+            
+            callback(response, error)
             
         }
 
