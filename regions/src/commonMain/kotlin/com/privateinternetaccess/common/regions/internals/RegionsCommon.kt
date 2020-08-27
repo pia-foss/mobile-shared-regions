@@ -112,7 +112,7 @@ public class RegionsCommon(
         }
 
         val response = client.getCatching<Pair<String?, Exception?>> {
-            url("http://164.90.215.141:8088/translations")
+            url("http://164.90.215.141:8088/latest/translations")
             header("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVmM2QzNWExYjY3ODZiMDAxM2Y2MTJmNiIsImlhdCI6MTU5Nzg0Njk0OH0.WT5r40obfxkohs3867eu2w8wKwPyVzgo5i3-NAWuPPA")
         }
         response.first?.let {
