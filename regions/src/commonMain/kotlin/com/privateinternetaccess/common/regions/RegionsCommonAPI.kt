@@ -13,7 +13,7 @@ public enum class RegionsProtocol(val protocol: String) {
 /**
  * Interface defining the API to be offered by the common module.
  */
-public interface RegionsAPI {
+public interface RegionsCommonAPI {
 
     /**
      * Fetch all regions localization information for next-gen.
@@ -59,7 +59,7 @@ public class RegionsCommonBuilder {
     /**
      * @return `RegionsAPI` instance.
      */
-    fun build(): RegionsAPI {
+    fun build(): RegionsCommonAPI {
         val pingDependency = pingRequestDependency
                 ?: throw Exception("Essential ping request dependency missing.")
         val messageVerificator = messageVerificatorDependency
