@@ -24,7 +24,7 @@ import Regions
  
 public class RegionsTask {
 
-    private var regionsApi: RegionsAPI? = nil
+    private var regionsApi: RegionsCommonAPI? = nil
     
     public init() {
         self.regionsApi = RegionsCommonBuilder()
