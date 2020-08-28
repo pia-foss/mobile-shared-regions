@@ -1,18 +1,12 @@
 package com.privateinternetaccess.common.regions.internals
 
-import com.privateinternetaccess.common.regions.PingRequest
-import com.privateinternetaccess.common.regions.RegionLowerLatencyInformation
-import com.privateinternetaccess.common.regions.RegionsAPI
-import com.privateinternetaccess.common.regions.RegionsProtocol
-import com.privateinternetaccess.common.regions.MessageVerificator
+import com.privateinternetaccess.common.regions.*
 import com.privateinternetaccess.common.regions.model.RegionsResponse
 import com.privateinternetaccess.common.regions.model.TranslationsGeoResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.features.HttpTimeout
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.utils.io.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -21,10 +15,11 @@ import kotlin.coroutines.CoroutineContext
 public class RegionsCommon(
         private val pingDependency: PingRequest,
         private val messageVerificator: MessageVerificator
-) : RegionsAPI, CoroutineScope {
+) : RegionsCommonAPI, CoroutineScope {
 
     companion object {
-        private const val ENDPOINT = "https://serverlist.piaservers.net/vpninfo/servers/new"
+        private const val LOCALIZATION_ENDPOINT = "http://164.90.215.141:8088/latest/translations"
+        private const val REGIONS_ENDPOINT = "https://serverlist.piaservers.net/vpninfo/servers/new"
         private const val REQUEST_TIMEOUT_MS = 5000L
     }
 
@@ -112,7 +107,7 @@ public class RegionsCommon(
         }
 
         val response = client.getCatching<Pair<String?, Exception?>> {
-            url("http://164.90.215.141:8088/latest/translations")
+            url(LOCALIZATION_ENDPOINT)
             header("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVmM2QzNWExYjY3ODZiMDAxM2Y2MTJmNiIsImlhdCI6MTU5Nzg0Njk0OH0.WT5r40obfxkohs3867eu2w8wKwPyVzgo5i3-NAWuPPA")
         }
         response.first?.let {
@@ -135,7 +130,7 @@ public class RegionsCommon(
         }
 
         val response = client.getCatching<Pair<String?, Exception?>> {
-            url(ENDPOINT)
+            url(REGIONS_ENDPOINT)
         }
         response.first?.let {
             handleFetchRegionsResponse(it, completionCallback)
