@@ -2,6 +2,7 @@ package com.privateinternetaccess.common.regions
 
 import com.privateinternetaccess.common.regions.internals.RegionsCommon
 import com.privateinternetaccess.common.regions.model.RegionsResponse
+import com.privateinternetaccess.common.regions.model.TranslationsGeoResponse
 
 public enum class RegionsProtocol(val protocol: String) {
     OPENVPN_TCP("ovpntcp"),
@@ -12,14 +13,21 @@ public enum class RegionsProtocol(val protocol: String) {
 /**
  * Interface defining the API to be offered by the common module.
  */
-public interface RegionsAPI {
+public interface RegionsCommonAPI {
 
     /**
-     * Fetch all servers information on GEN4.
+     * Fetch all regions localization information for next-gen.
+     *
+     * @param callback `(response: TranslationsGeoResponse?, error: Error?)`. Invoked on the main thread.
+     */
+    fun fetchLocalization(callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit)
+
+    /**
+     * Fetch all regions information for next-gen.
      *
      * @param callback `(response: RegionsResponse?, error: Error?)`. Invoked on the main thread.
      */
-    fun fetch(callback: (response: RegionsResponse?, error: Error?) -> Unit)
+    fun fetchRegions(callback: (response: RegionsResponse?, error: Error?) -> Unit)
 
     /**
      * Starts the process of ping requests and return the updated `ServerResponse` object as a
@@ -51,7 +59,7 @@ public class RegionsCommonBuilder {
     /**
      * @return `RegionsAPI` instance.
      */
-    fun build(): RegionsAPI {
+    fun build(): RegionsCommonAPI {
         val pingDependency = pingRequestDependency
                 ?: throw Exception("Essential ping request dependency missing.")
         val messageVerificator = messageVerificatorDependency

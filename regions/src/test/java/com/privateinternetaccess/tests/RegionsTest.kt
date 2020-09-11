@@ -63,7 +63,7 @@ class RegionsTest {
             }
         }
         val regions = RegionsCommon(GenericPingHandlerTest(), MessageVerificatorTest())
-        regions.handleFetchResponse(RESPONSE) { _, _ -> }
+        regions.handleFetchRegionsResponse(RESPONSE) { _, _ -> }
     }
 
     @Test
@@ -80,7 +80,7 @@ class RegionsTest {
             }
         }
         val regions = RegionsCommon(PingHandlerTest(), GenericMessageVerificatorTest())
-        regions.handleFetchResponse(RESPONSE) { _, _ -> }
+        regions.handleFetchRegionsResponse(RESPONSE) { _, _ -> }
         regions.handlePingRequest(RegionsProtocol.OPENVPN_UDP) {_, _ -> }
     }
 
@@ -96,7 +96,7 @@ class RegionsTest {
     @Test
     fun testResponseSerializationWithKnownKeys() = runBlocking {
         val regions = RegionsCommon(GenericPingHandlerTest(), GenericMessageVerificatorTest())
-        val result = regions.serialize(MSG_RESPONSE)
+        val result = regions.serializeRegions(MSG_RESPONSE)
         assertEquals(result.regions.size, 1)
         assertEquals(result.regions.first().country, "US")
         assertEquals(result.regions.first().servers.size, 4) // 4 protocols supported in the region
@@ -106,7 +106,7 @@ class RegionsTest {
     fun testResponseSerializationWithUnknownKeys() = runBlocking {
         val response = "{\"groups\": {\"ovpntcp\": [{\"name\": \"openvpn_tcp\", \"ports\": [11]}], \"ovpnudp\": [{\"name\": \"openvpn_udp\", \"ports\": [11]}], \"wg\": [{\"name\": \"wireguard\", \"ports\": [11]}], \"ikev2\": [{\"name\": \"ikev2\", \"ports\": [11]}], \"proxysocks\": [{\"name\": \"socks\", \"ports\": [11]}], \"proxyss\": [{\"name\": \"shadowsocks\", \"ports\": [11]}]}, \"regions\": [{\"id\": \"us_california\", \"UNKNOWN\": \"ANY\", \"name\": \"US California\", \"country\": \"US\", \"auto_region\": true, \"dns\": \"127.0.0.1\", \"port_forward\": false, \"servers\": {\"ovpnudp\": [{\"ip\": \"127.0.0.1\", \"cn\": \"losangeles455\"}, {\"ip\": \"127.0.0.1\", \"cn\": \"losangeles404\"}], \"ovpntcp\": [{\"ip\": \"127.0.0.1\", \"cn\": \"losangeles455\"}, {\"ip\": \"127.0.0.1\", \"cn\": \"losangeles404\"}], \"ikev2\": [{\"ip\": \"127.0.0.1\", \"cn\": \"losangeles455\"}, {\"ip\": \"127.0.0.1\", \"cn\": \"losangeles404\"}], \"wg\": [{\"ip\": \"127.0.0.1\", \"cn\": \"losangeles455\"}, {\"ip\": \"127.0.0.1\", \"cn\": \"losangeles404\"}]}}]}"
         val regions = RegionsCommon(GenericPingHandlerTest(), GenericMessageVerificatorTest())
-        val result = regions.serialize(response)
+        val result = regions.serializeRegions(response)
         assertEquals(result.regions.size, 1)
         assertEquals(result.regions.first().country, "US")
         assertEquals(result.regions.first().servers.size, 4) // 4 protocols supported in the region
