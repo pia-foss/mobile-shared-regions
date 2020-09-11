@@ -77,7 +77,7 @@ class Regions : RegionsAPI {
                 continue
             }
             val regionTranslation = regionTranslationForLocale(locale, regionTranslations)
-            if (regionTranslation == null) {
+            if (regionTranslation.isNullOrEmpty()) {
                 localizedRegions.add(region)
                 continue
             }
