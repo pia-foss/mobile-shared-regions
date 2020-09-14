@@ -18,7 +18,7 @@ public class RegionsCommon(
 ) : RegionsCommonAPI, CoroutineScope {
 
     companion object {
-        private const val LOCALIZATION_ENDPOINT = "http://164.90.215.141:8088/latest/translations"
+        private const val LOCALIZATION_ENDPOINT = "https://serverlist.piaservers.net/vpninfo/regions/v2"
         private const val REGIONS_ENDPOINT = "https://serverlist.piaservers.net/vpninfo/servers/new"
         private const val REQUEST_TIMEOUT_MS = 5000L
     }
@@ -57,7 +57,7 @@ public class RegionsCommon(
             return
         }
         state = RegionsState.REQUESTING
-        runBlocking {
+        launch {
             fetchLocalizationAsync(callback)
         }
     }
@@ -68,7 +68,7 @@ public class RegionsCommon(
             return
         }
         state = RegionsState.REQUESTING
-        runBlocking {
+        launch {
             fetchRegionsAsync(callback)
         }
     }
@@ -82,7 +82,7 @@ public class RegionsCommon(
             return
         }
         state = RegionsState.REQUESTING
-        runBlocking {
+        launch {
             pingRequestsAsync(protocol, callback)
         }
     }
@@ -106,13 +106,9 @@ public class RegionsCommon(
             }
         }
 
-        val response = client.getCatching<Pair<String?, Exception?>> {
-            url(LOCALIZATION_ENDPOINT)
-            header("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVmM2QzNWExYjY3ODZiMDAxM2Y2MTJmNiIsImlhdCI6MTU5Nzg0Njk0OH0.WT5r40obfxkohs3867eu2w8wKwPyVzgo5i3-NAWuPPA")
-        }
+        val response = client.getCatching<Pair<String?, Exception?>> { url(LOCALIZATION_ENDPOINT) }
         response.first?.let {
-            val serializedLocalization = json.parse(TranslationsGeoResponse.serializer(), it)
-            completionCallback(serializedLocalization, null)
+            handleFetchLocalizationResponse(it, completionCallback)
         }
         response.second?.let {
             completionCallback(null, Error(it.message))
@@ -140,25 +136,41 @@ public class RegionsCommon(
         }
     }
 
-    public suspend fun handleFetchRegionsResponse(
-        response: String,
-        callback: (response: RegionsResponse?, error: Error?) -> Unit
+    private fun handleFetchLocalizationResponse(
+            response: String,
+            callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit
     ) {
         val responseList = response.split("\n\n")
-        val json = responseList.first()
+        val message = responseList.first()
         val key = responseList.last()
 
         var error: Error? = null
-        if (messageVerificator.verifyMessage(json, key)) {
-            knownRegionsResponse = serializeRegions(json)
+        var serializedLocalization: TranslationsGeoResponse? = null
+        if (messageVerificator.verifyMessage(message, key)) {
+            serializedLocalization = json.parse(TranslationsGeoResponse.serializer(), message)
         } else {
             error = Error("Invalid signature")
         }
 
-        withContext(Dispatchers.Main) {
-            state = RegionsState.IDLE
-            callback(knownRegionsResponse, error)
+        callback(serializedLocalization, error)
+    }
+
+    public fun handleFetchRegionsResponse(
+        response: String,
+        callback: (response: RegionsResponse?, error: Error?) -> Unit
+    ) {
+        val responseList = response.split("\n\n")
+        val message = responseList.first()
+        val key = responseList.last()
+
+        var error: Error? = null
+        if (messageVerificator.verifyMessage(message, key)) {
+            knownRegionsResponse = serializeRegions(message)
+        } else {
+            error = Error("Invalid signature")
         }
+
+        callback(knownRegionsResponse, error)
     }
 
     public fun serializeRegions(jsonResponse: String) =
