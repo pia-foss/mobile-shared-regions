@@ -1,14 +1,12 @@
 package com.privateinternetaccess.common.regions.internals
 
-import com.privateinternetaccess.common.regions.PingRequest
-import com.privateinternetaccess.common.regions.RegionLowerLatencyInformation
-import com.privateinternetaccess.common.regions.RegionsAPI
-import com.privateinternetaccess.common.regions.RegionsProtocol
-import com.privateinternetaccess.common.regions.MessageVerificator
+import com.privateinternetaccess.common.regions.*
 import com.privateinternetaccess.common.regions.model.RegionsResponse
+import com.privateinternetaccess.common.regions.model.TranslationsGeoResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.features.HttpTimeout
-import io.ktor.client.request.get
+import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -17,10 +15,11 @@ import kotlin.coroutines.CoroutineContext
 public class RegionsCommon(
         private val pingDependency: PingRequest,
         private val messageVerificator: MessageVerificator
-) : RegionsAPI, CoroutineScope {
+) : RegionsCommonAPI, CoroutineScope {
 
     companion object {
-        private const val ENDPOINT = "https://serverlist.piaservers.net/vpninfo/servers/new"
+        private const val LOCALIZATION_ENDPOINT = "https://serverlist.piaservers.net/vpninfo/regions/v2"
+        private const val REGIONS_ENDPOINT = "https://serverlist.piaservers.net/vpninfo/servers/new"
         private const val REQUEST_TIMEOUT_MS = 5000L
     }
 
@@ -39,6 +38,7 @@ public class RegionsCommon(
             val portForwarding: Boolean
     )
 
+    private val json = Json(JsonConfiguration(ignoreUnknownKeys = true))
     private val client = HttpClient() {
         install(HttpTimeout) {
             requestTimeoutMillis = REQUEST_TIMEOUT_MS
@@ -51,18 +51,25 @@ public class RegionsCommon(
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main
     // endregion
+    override fun fetchLocalization(callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit) {
+        if (state == RegionsState.REQUESTING) {
+            callback(null, Error("Request already in progress"))
+            return
+        }
+        state = RegionsState.REQUESTING
+        launch {
+            fetchLocalizationAsync(callback)
+        }
+    }
 
-    // region RegionsAPI
-    override fun fetch(
-            callback: (response: RegionsResponse?, error: Error?) -> Unit
-    ) {
+    override fun fetchRegions(callback: (response: RegionsResponse?, error: Error?) -> Unit) {
         if (state == RegionsState.REQUESTING) {
             callback(knownRegionsResponse, Error("Request already in progress"))
             return
         }
         state = RegionsState.REQUESTING
-        runBlocking {
-            fetchAsync(callback)
+        launch {
+            fetchRegionsAsync(callback)
         }
     }
 
@@ -75,7 +82,7 @@ public class RegionsCommon(
             return
         }
         state = RegionsState.REQUESTING
-        runBlocking {
+        launch {
             pingRequestsAsync(protocol, callback)
         }
     }
@@ -89,51 +96,85 @@ public class RegionsCommon(
         handlePingRequest(protocol, callback)
     }
 
-    private fun fetchAsync(
-            callback: (response: RegionsResponse?, error: Error?) -> Unit
-    ) = launch {
-        try {
-            handleFetchResponse(client.get(ENDPOINT), callback)
-        } catch (exception: Exception) {
-            withContext(Dispatchers.Main) {
-                state = RegionsState.IDLE
-                callback(knownRegionsResponse, Error("Error fetching next generation servers: ${exception.message}"))
+    private fun fetchLocalizationAsync(callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit) = launch {
+        val completionCallback: (TranslationsGeoResponse?, Error?) -> Unit = { response: TranslationsGeoResponse?, error: Error? ->
+            launch {
+                withContext(Dispatchers.Main) {
+                    state = RegionsState.IDLE
+                    callback(response, error)
+                }
             }
         }
-        catch (throwable: Throwable) {
-            // Temporary catch of throwable. Waiting for Ktor's release with Exceptions.
-            withContext(Dispatchers.Main) {
-                state = RegionsState.IDLE
-                callback(knownRegionsResponse, Error("Error fetching next generation servers: ${throwable.message}"))
-            }
+
+        val response = client.getCatching<Pair<String?, Exception?>> { url(LOCALIZATION_ENDPOINT) }
+        response.first?.let {
+            handleFetchLocalizationResponse(it, completionCallback)
+        }
+        response.second?.let {
+            completionCallback(null, Error(it.message))
         }
     }
 
-    public suspend fun handleFetchResponse(
-        response: String,
-        callback: (response: RegionsResponse?, error: Error?) -> Unit
+    private fun fetchRegionsAsync(callback: (response: RegionsResponse?, error: Error?) -> Unit) = launch {
+        val completionCallback: (RegionsResponse?, Error?) -> Unit = { response: RegionsResponse?, error: Error? ->
+            launch {
+                withContext(Dispatchers.Main) {
+                    state = RegionsState.IDLE
+                    callback(response, error)
+                }
+            }
+        }
+
+        val response = client.getCatching<Pair<String?, Exception?>> {
+            url(REGIONS_ENDPOINT)
+        }
+        response.first?.let {
+            handleFetchRegionsResponse(it, completionCallback)
+        }
+        response.second?.let {
+            completionCallback(null, Error(it.message))
+        }
+    }
+
+    private fun handleFetchLocalizationResponse(
+            response: String,
+            callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit
     ) {
         val responseList = response.split("\n\n")
-        val json = responseList.first()
+        val message = responseList.first()
         val key = responseList.last()
 
         var error: Error? = null
-        if (messageVerificator.verifyMessage(json, key)) {
-            knownRegionsResponse = serialize(json)
+        var serializedLocalization: TranslationsGeoResponse? = null
+        if (messageVerificator.verifyMessage(message, key)) {
+            serializedLocalization = json.parse(TranslationsGeoResponse.serializer(), message)
         } else {
             error = Error("Invalid signature")
         }
 
-        withContext(Dispatchers.Main) {
-            state = RegionsState.IDLE
-            callback(knownRegionsResponse, error)
-        }
+        callback(serializedLocalization, error)
     }
 
-    public fun serialize(jsonResponse: String) =
-            Json(JsonConfiguration(
-                    ignoreUnknownKeys = true
-            )).parse(RegionsResponse.serializer(), jsonResponse)
+    public fun handleFetchRegionsResponse(
+        response: String,
+        callback: (response: RegionsResponse?, error: Error?) -> Unit
+    ) {
+        val responseList = response.split("\n\n")
+        val message = responseList.first()
+        val key = responseList.last()
+
+        var error: Error? = null
+        if (messageVerificator.verifyMessage(message, key)) {
+            knownRegionsResponse = serializeRegions(message)
+        } else {
+            error = Error("Invalid signature")
+        }
+
+        callback(knownRegionsResponse, error)
+    }
+
+    public fun serializeRegions(jsonResponse: String) =
+            json.parse(RegionsResponse.serializer(), jsonResponse)
 
     public suspend fun handlePingRequest(
         protocol: RegionsProtocol,
@@ -212,5 +253,26 @@ public class RegionsCommon(
         }
         return result
     }
-// endregion
+    // endregion
+
+    // region HttpClient extensions
+    private suspend inline fun <reified T> HttpClient.getCatching(
+            block: HttpRequestBuilder.() -> Unit = {}
+    ): Pair<String?, Exception?> {
+        var exception: Exception? = null
+        var response: String? = null
+        try {
+            response = request {
+                method = HttpMethod.Get
+                apply(block)
+            }
+        } catch (e: Exception) {
+            exception = e
+        } catch (throwable: Throwable) {
+            // Temporary catch of throwable. Waiting for Ktor's release with Exceptions.
+            exception = Exception(throwable.message)
+        }
+        return Pair(response, exception)
+    }
+    // endregion
 }

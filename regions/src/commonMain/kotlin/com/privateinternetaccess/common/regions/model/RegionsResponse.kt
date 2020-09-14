@@ -30,6 +30,10 @@ public data class RegionsResponse(
         val dns: String = "",
         @SerialName("geo")
         val geo: Boolean = false,
+        @SerialName("latitude")
+        val latitude: String? = null,
+        @SerialName("longitude")
+        val longitude: String? = null,
         @SerialName("auto_region")
         val autoRegion: Boolean = false,
         @SerialName("port_forward")
