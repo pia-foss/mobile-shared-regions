@@ -45,29 +45,20 @@ public class RegionsCommon(
         }
     }
     private var knownRegionsResponse: RegionsResponse? = null
-    private var state = RegionsState.IDLE
 
     // region CoroutineScope
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main
     // endregion
+
+    // region RegionsCommonAPI
     override fun fetchLocalization(callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit) {
-        if (state == RegionsState.REQUESTING) {
-            callback(null, Error("Request already in progress"))
-            return
-        }
-        state = RegionsState.REQUESTING
         launch {
             fetchLocalizationAsync(callback)
         }
     }
 
     override fun fetchRegions(callback: (response: RegionsResponse?, error: Error?) -> Unit) {
-        if (state == RegionsState.REQUESTING) {
-            callback(knownRegionsResponse, Error("Request already in progress"))
-            return
-        }
-        state = RegionsState.REQUESTING
         launch {
             fetchRegionsAsync(callback)
         }
@@ -77,11 +68,6 @@ public class RegionsCommon(
             protocol: RegionsProtocol,
             callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
     ) {
-        if (state == RegionsState.REQUESTING) {
-            callback(emptyList(), Error("Request already in progress"))
-            return
-        }
-        state = RegionsState.REQUESTING
         launch {
             pingRequestsAsync(protocol, callback)
         }
@@ -100,7 +86,6 @@ public class RegionsCommon(
         val completionCallback: (TranslationsGeoResponse?, Error?) -> Unit = { response: TranslationsGeoResponse?, error: Error? ->
             launch {
                 withContext(Dispatchers.Main) {
-                    state = RegionsState.IDLE
                     callback(response, error)
                 }
             }
@@ -119,7 +104,6 @@ public class RegionsCommon(
         val completionCallback: (RegionsResponse?, Error?) -> Unit = { response: RegionsResponse?, error: Error? ->
             launch {
                 withContext(Dispatchers.Main) {
-                    state = RegionsState.IDLE
                     callback(response, error)
                 }
             }
@@ -189,7 +173,6 @@ public class RegionsCommon(
         }
 
         withContext(Dispatchers.Main) {
-            state = RegionsState.IDLE
             callback(response, error)
         }
     }
