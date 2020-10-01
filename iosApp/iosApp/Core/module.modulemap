@@ -1,0 +1,4 @@
+module __RegionsLibraryNative {
+    header "Ping/SimplePing.h"
+    export *
+}
