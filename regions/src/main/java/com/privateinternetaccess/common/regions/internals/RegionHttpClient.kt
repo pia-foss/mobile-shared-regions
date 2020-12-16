@@ -1,3 +1,21 @@
+/*
+ *  Copyright (c) 2020 Private Internet Access, Inc.
+ *
+ *  This file is part of the Private Internet Access Mobile Client.
+ *
+ *  The Private Internet Access Mobile Client is free software: you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License as published by the Free
+ *  Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ *  The Private Internet Access Mobile Client is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ *  details.
+ *
+ *  You should have received a copy of the GNU General Public License along with the Private
+ *  Internet Access Mobile Client.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.privateinternetaccess.common.regions.internals
 
 import com.privateinternetaccess.common.regions.internals.RegionsCommon.Companion.REQUEST_TIMEOUT_MS
@@ -19,13 +37,21 @@ import java.util.concurrent.TimeUnit
 import javax.net.ssl.*
 import javax.security.auth.x500.X500Principal
 
+
 actual object RegionHttpClient {
     actual fun client(pinnedEndpoint: Pair<String, String>?) = HttpClient(OkHttp) {
         expectSuccess = false
         install(HttpTimeout) {
             requestTimeoutMillis = REQUEST_TIMEOUT_MS
         }
-        pinnedEndpoint?.let {
+
+        if (pinnedEndpoint == null) {
+            engine {
+                config {
+                    retryOnConnectionFailure(true)
+                }
+            }
+        } else {
             engine {
                 preconfigured = AccountCertificatePinner.getOkHttpClient(pinnedEndpoint.first, pinnedEndpoint.second)
             }
@@ -76,6 +102,7 @@ private class AccountCertificatePinner {
                 builder.sslSocketFactory(sslSocketFactory, trustManager)
             }
             builder.hostnameVerifier(AccountHostnameVerifier(trustManager, requestHostname, commonName))
+            builder.retryOnConnectionFailure(true)
             return builder.build()
         }
     }

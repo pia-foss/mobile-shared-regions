@@ -13,7 +13,7 @@ ics-openvpn.zip
 zh-CN.zip
 zh-TW.zip
 .gradle
-app/build
+regions/build
 gradlew.bat
 local.properties
 ovpnlibs
@@ -43,3 +43,4 @@ dist
 apple_dist
 Preview.html
 Gemfile.lock
+

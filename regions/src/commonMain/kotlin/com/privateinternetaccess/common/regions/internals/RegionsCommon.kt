@@ -1,14 +1,36 @@
+/*
+ *  Copyright (c) 2020 Private Internet Access, Inc.
+ *
+ *  This file is part of the Private Internet Access Mobile Client.
+ *
+ *  The Private Internet Access Mobile Client is free software: you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License as published by the Free
+ *  Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ *  The Private Internet Access Mobile Client is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ *  details.
+ *
+ *  You should have received a copy of the GNU General Public License along with the Private
+ *  Internet Access Mobile Client.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.privateinternetaccess.common.regions.internals
 
 import com.privateinternetaccess.common.regions.*
 import com.privateinternetaccess.common.regions.model.RegionsResponse
 import com.privateinternetaccess.common.regions.model.TranslationsGeoResponse
 import io.ktor.client.HttpClient
+import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.CoroutineContext
+
 
 expect object RegionHttpClient {
     fun client(pinnedEndpoint: Pair<String, String>? = null): HttpClient
@@ -22,8 +44,8 @@ public class RegionsCommon(
 
     companion object {
         private const val LOCALIZATION_ENDPOINT = "/vpninfo/regions/v2"
-        private const val REGIONS_ENDPOINT = "/vpninfo/servers/v4"
-        internal const val REQUEST_TIMEOUT_MS = 3000L
+        private const val REGIONS_ENDPOINT = "/vpninfo/servers/v5"
+        internal const val REQUEST_TIMEOUT_MS = 6000L
         internal const val CERTIFICATE = "-----BEGIN CERTIFICATE-----\n" +
                 "MIIHqzCCBZOgAwIBAgIJAJ0u+vODZJntMA0GCSqGSIb3DQEBDQUAMIHoMQswCQYD\n" +
                 "VQQGEwJVUzELMAkGA1UECBMCQ0ExEzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNV\n" +
@@ -69,11 +91,6 @@ public class RegionsCommon(
                 "-----END CERTIFICATE-----\n"
     }
 
-    private enum class RegionsState {
-        IDLE,
-        REQUESTING
-    }
-
     private data class RegionEndpointInformation(
             val region: String,
             val name: String,
@@ -115,7 +132,7 @@ public class RegionsCommon(
     // region Private
     private fun pingRequestsAsync(
         callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
-    ) = launch(Dispatchers.Default) {
+    ) = async {
         handlePingRequest(callback)
     }
 
@@ -123,39 +140,52 @@ public class RegionsCommon(
         endpoints: List<RegionEndpoint>,
         callback: (response: TranslationsGeoResponse?, error: Error?) -> Unit
     ) = async {
+        var parsedResponse: TranslationsGeoResponse? = null
+        var error: Error? = null
+        if (endpoints.isNullOrEmpty()) {
+            error = Error("No available endpoints to perform the request")
+        }
+
         for (accountEndpoint in endpoints) {
-            var parsedResponse: TranslationsGeoResponse? = null
-            var error: Error? = null
+            error = null
             val client = if (accountEndpoint.usePinnedCertificate) {
                 RegionHttpClient.client(Pair(accountEndpoint.endpoint, accountEndpoint.certificateCommonName!!))
             } else {
                 RegionHttpClient.client()
             }
 
-            val response = client.getCatching<Pair<String?, Exception?>> {
+            val response = client.getCatching<Pair<HttpResponse?, Exception?>> {
                 url("https://${accountEndpoint.endpoint}$LOCALIZATION_ENDPOINT")
             }
 
-            response.first?.let {
-                val responseHandled: Pair<TranslationsGeoResponse?, Error?> = handleFetchLocalizationResponse(it)
-                parsedResponse = responseHandled.first
-                error = responseHandled.second
+            response.first?.let { httpResponse ->
+                try {
+                    val content = httpResponse.receive<String>()
+                    if (RegionsUtils.isErrorStatusCode(httpResponse.status.value)) {
+                        error = Error("${httpResponse.status.value} ${httpResponse.status.description}")
+                    } else {
+                        val responseHandled: Pair<TranslationsGeoResponse?, Error?> = handleFetchLocalizationResponse(content)
+                        parsedResponse = responseHandled.first
+                        error = responseHandled.second
+                    }
+                } catch (exception: NoTransformationFoundException) {
+                    error = Error("600 - Unexpected response transformation: $exception")
+                } catch (exception: DoubleReceiveException) {
+                    error = Error("600 - Request receive already invoked: $exception")
+                }
             }
             response.second?.let {
                 error = Error(it.message)
             }
 
-            // If there has been an error and it's not the last endpoint. Continue to the next one.
-            if (error != null && accountEndpoint != endpoints.last()) {
-                continue
+            // If there were no errors in the request for the current endpoint. No need to try the next endpoint.
+            if (error == null) {
+                break
             }
+        }
 
-            // If the request was successful or we exhausted the list of endpoints.
-            // Report the request result and break the loop.
-            withContext(Dispatchers.Main) {
-                callback(parsedResponse, error)
-            }
-            break
+        withContext(Dispatchers.Main) {
+            callback(parsedResponse, error)
         }
     }
 
@@ -163,39 +193,52 @@ public class RegionsCommon(
         endpoints: List<RegionEndpoint>,
         callback: (response: RegionsResponse?, error: Error?) -> Unit
     ) = async {
+        var parsedResponse: RegionsResponse? = null
+        var error: Error? = null
+        if (endpoints.isNullOrEmpty()) {
+            error = Error("No available endpoints to perform the request")
+        }
+
         for (accountEndpoint in endpoints) {
-            var parsedResponse: RegionsResponse? = null
-            var error: Error? = null
+            error = null
             val client = if (accountEndpoint.usePinnedCertificate) {
                 RegionHttpClient.client(Pair(accountEndpoint.endpoint, accountEndpoint.certificateCommonName!!))
             } else {
                 RegionHttpClient.client()
             }
 
-            val response = client.getCatching<Pair<String?, Exception?>> {
+            val response = client.getCatching<Pair<HttpResponse?, Exception?>> {
                 url("https://${accountEndpoint.endpoint}$REGIONS_ENDPOINT")
             }
 
-            response.first?.let {
-                val responseHandled: Pair<RegionsResponse?, Error?> = handleFetchRegionsResponse(it)
-                parsedResponse = responseHandled.first
-                error = responseHandled.second
+            response.first?.let { httpResponse ->
+                try {
+                    val content = httpResponse.receive<String>()
+                    if (RegionsUtils.isErrorStatusCode(httpResponse.status.value)) {
+                        error = Error("${httpResponse.status.value} ${httpResponse.status.description}")
+                    } else {
+                        val responseHandled: Pair<RegionsResponse?, Error?> = handleFetchRegionsResponse(content)
+                        parsedResponse = responseHandled.first
+                        error = responseHandled.second
+                    }
+                } catch (exception: NoTransformationFoundException) {
+                    error = Error("600 - Unexpected response transformation: $exception")
+                } catch (exception: DoubleReceiveException) {
+                    error = Error("600 - Request receive already invoked: $exception")
+                }
             }
             response.second?.let {
                 error = Error(it.message)
             }
 
-            // If there has been an error and it's not the last endpoint. Continue to the next one.
-            if (error != null && accountEndpoint != endpoints.last()) {
-                continue
+            // If there were no errors in the request for the current endpoint. No need to try the next endpoint.
+            if (error == null) {
+                break
             }
+        }
 
-            // If the request was successful or we exhausted the list of endpoints.
-            // Report the request result and break the loop.
-            withContext(Dispatchers.Main) {
-                callback(parsedResponse, error)
-            }
-            break
+        withContext(Dispatchers.Main) {
+            callback(parsedResponse, error)
         }
     }
 
@@ -209,9 +252,13 @@ public class RegionsCommon(
         var error: Error? = null
         var serializedLocalization: TranslationsGeoResponse? = null
         if (messageVerificator.verifyMessage(message, key)) {
-            serializedLocalization = json.decodeFromString(TranslationsGeoResponse.serializer(), message)
+            try {
+                serializedLocalization = json.decodeFromString(TranslationsGeoResponse.serializer(), message)
+            } catch (exception: SerializationException) {
+                error = Error("Decode error $exception")
+            }
         } else {
-            error = Error("Invalid signature")
+            error = Error("Invalid signature on Locale request")
         }
 
         return Pair(serializedLocalization, error)
@@ -226,9 +273,13 @@ public class RegionsCommon(
 
         var error: Error? = null
         if (messageVerificator.verifyMessage(message, key)) {
-            knownRegionsResponse = serializeRegions(message)
+            try {
+                knownRegionsResponse = serializeRegions(message)
+            } catch (exception: SerializationException) {
+                error = Error("Decode error $exception")
+            }
         } else {
-            error = Error("Invalid signature")
+            error = Error("Invalid signature on Regions request")
         }
 
         return Pair(knownRegionsResponse, error)
@@ -268,7 +319,11 @@ public class RegionsCommon(
 
         pingDependency.platformPingRequest(endpointsToPing) { latencyResults ->
             for ((region, results) in latencyResults) {
-                results.minBy { it.latency }?.let { minEndpointLatency ->
+                if (results.isNullOrEmpty()) {
+                    continue
+                }
+
+                results.minByOrNull { it.latency }?.let { minEndpointLatency ->
                     allKnownEndpointsDetails[region]?.let { allKnownEndpointsDetails ->
                         allKnownEndpointsDetails.firstOrNull {
                             it.endpoint == minEndpointLatency.endpoint
@@ -311,9 +366,9 @@ public class RegionsCommon(
     // region HttpClient extensions
     private suspend inline fun <reified T> HttpClient.getCatching(
             block: HttpRequestBuilder.() -> Unit = {}
-    ): Pair<String?, Exception?> {
+    ): Pair<HttpResponse?, Exception?> {
         var exception: Exception? = null
-        var response: String? = null
+        var response: HttpResponse? = null
         try {
             response = request {
                 method = HttpMethod.Get
@@ -321,9 +376,6 @@ public class RegionsCommon(
             }
         } catch (e: Exception) {
             exception = e
-        } catch (throwable: Throwable) {
-            // Temporary catch of throwable. Waiting for Ktor's release with Exceptions.
-            exception = Exception(throwable.message)
         }
         return Pair(response, exception)
     }
