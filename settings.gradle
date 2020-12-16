@@ -1,0 +1,3 @@
+rootProject.name = 'regions-project'
+enableFeaturePreview('GRADLE_METADATA')
+include ':regions'
