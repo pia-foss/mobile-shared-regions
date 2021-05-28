@@ -69,7 +69,9 @@ public data class RegionsResponse(
             @SerialName("ip")
             val ip: String = "",
             @SerialName("cn")
-            val cn: String = ""
+            val cn: String = "",
+            @SerialName("van")
+            val usesVanillaOVPN: Boolean = true
         )
     }
 }

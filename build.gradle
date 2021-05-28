@@ -26,13 +26,13 @@ android {
     compileSdkVersion 30
     sourceSets.main.manifest.srcFile('src/androidMain/AndroidManifest.xml')
     defaultConfig {
-        minSdkVersion 24
+        minSdkVersion 21
         targetSdkVersion 30
     }
 }
 
 kotlin {
-    version = "1.1.0"
+    version = "1.2.2"
     cocoapods {
         summary = "Regions Module"
         homepage = "https://www.privateinternetaccess.com"

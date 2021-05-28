@@ -27,6 +27,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.CoroutineContext
@@ -40,7 +41,7 @@ expect object RegionHttpClient {
     fun client(pinnedEndpoint: Pair<String, String>? = null): HttpClient
 }
 
-expect object PingPerformer {
+expect class PingPerformer() {
 
     /**
      * @param endpoints Map<String, List<String>>. Key: Region. List<String>: Endpoints within the
@@ -69,7 +70,7 @@ public class Regions(
 
     companion object {
         private const val LOCALIZATION_ENDPOINT = "/vpninfo/regions/v2"
-        private const val REGIONS_ENDPOINT = "/vpninfo/servers/v5"
+        private const val REGIONS_ENDPOINT = "/vpninfo/servers/v6"
         internal const val REQUEST_TIMEOUT_MS = 6000L
         internal const val PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\n"+
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzLYHwX5Ug/oUObZ5eH5P\n" +
@@ -136,6 +137,7 @@ public class Regions(
     )
 
     private val json = Json { ignoreUnknownKeys = true }
+    private val pingPerformer = PingPerformer()
     private var knownRegionsResponse: RegionsResponse? = null
     private var knownLocalizationResponse: TranslationsGeoResponse? = null
 
@@ -402,7 +404,7 @@ public class Regions(
         var error: Error? = null
         if (MessageVerificator.verifyMessage(message, key)) {
             try {
-                knownRegionsResponse = serializeRegions(message)
+                knownRegionsResponse = adaptResponse(serializeRegions(message))
             } catch (exception: SerializationException) {
                 error = Error("Decode error $exception")
             }
@@ -416,23 +418,75 @@ public class Regions(
     private fun serializeRegions(jsonResponse: String) =
         json.decodeFromString(RegionsResponse.serializer(), jsonResponse)
 
-    private suspend fun handlePingRequest(
+    /**
+     * This whole adaptation is due to the fact that we treat the lack of the `van` parameter on a server as
+     * `usesVanillaOVPN=true`. Which means that for the rest of the servers that are non-openvpn related we would be
+     * adding a parameter with an invalid value as they don't care about openvpn.
+     */
+    private fun adaptResponse(response: RegionsResponse): RegionsResponse {
+        val regions = mutableListOf<RegionsResponse.Region>()
+        for (region in response.regions) {
+            val servers = mutableMapOf<String, List<RegionsResponse.Region.ServerDetails>>()
+            for (server in region.servers) {
+                var serverDetails = server.value.toMutableList()
+                if (server.key != RegionsProtocol.OPENVPN_UDP.protocol &&
+                    server.key != RegionsProtocol.OPENVPN_TCP.protocol) {
+                    serverDetails = mutableListOf()
+                    for (serverDetail in server.value) {
+                        serverDetails.add(
+                            RegionsResponse.Region.ServerDetails(
+                                serverDetail.ip,
+                                serverDetail.cn,
+                                false
+                            )
+                        )
+                    }
+                }
+                servers[server.key] = serverDetails.toList()
+            }
+            regions.add(
+                RegionsResponse.Region(
+                    region.id,
+                    region.name,
+                    region.country,
+                    region.dns,
+                    region.geo,
+                    region.offline,
+                    region.latitude,
+                    region.longitude,
+                    region.autoRegion,
+                    region.portForward,
+                    region.proxy,
+                    servers
+                )
+            )
+        }
+        return RegionsResponse(
+            response.groups,
+            regions
+        )
+    }
+
+    private fun handlePingRequest(
         callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
     ) {
-        var error: Error? = null
-        var response = listOf<RegionLowerLatencyInformation>()
         knownRegionsResponse?.let {
-            response = requestEndpointsLowerLatencies(it)
+            requestEndpointsLowerLatencies(it) { response ->
+                launch(Dispatchers.Main) {
+                    callback(response, null)
+                }
+            }
         } ?: run {
-            error = Error("Unknown regions")
-        }
-
-        withContext(Dispatchers.Main) {
-            callback(response, error)
+            launch(Dispatchers.Main) {
+                callback(emptyList(), Error("Unknown regions"))
+            }
         }
     }
 
-    private fun requestEndpointsLowerLatencies(regionsResponse: RegionsResponse): List<RegionLowerLatencyInformation> {
+    private fun requestEndpointsLowerLatencies(
+        regionsResponse: RegionsResponse,
+        callback: (response: List<RegionLowerLatencyInformation>) -> Unit
+    ) {
         val endpointsToPing = mutableMapOf<String, List<String>>()
         val lowerLatencies = mutableListOf<RegionLowerLatencyInformation>()
 
@@ -445,7 +499,7 @@ public class Regions(
             endpointsToPing[region] = regionEndpoints
         }
 
-        PingPerformer.pingEndpoints(endpointsToPing) { latencyResults ->
+        pingPerformer.pingEndpoints(endpointsToPing) { latencyResults ->
             for ((region, results) in latencyResults) {
                 if (results.isNullOrEmpty()) {
                     continue
@@ -465,8 +519,8 @@ public class Regions(
                     }
                 }
             }
+            callback(lowerLatencies)
         }
-        return lowerLatencies
     }
 
     private fun flattenEndpointsInformation(response: RegionsResponse): Map<String, List<RegionEndpointInformation>> {

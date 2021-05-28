@@ -27,6 +27,7 @@ project.properties
 *.apk
 
 # iOS
+regions.podspec
 *.swp
 *.pbxuser
 **/*.xcworkspace/xcuserdata
@@ -38,9 +39,11 @@ fastlane/README.md
 fastlane/report.xml
 fastlane/test_output
 fastlane/review_information/demo_*
+
 #build
 dist
 apple_dist
 Preview.html
 Gemfile.lock
+build/*
 

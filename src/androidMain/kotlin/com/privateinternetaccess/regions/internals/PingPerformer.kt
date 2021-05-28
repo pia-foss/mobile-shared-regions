@@ -23,18 +23,26 @@ import kotlinx.coroutines.*
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
+import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureTimeMillis
 
 
-actual object PingPerformer {
+actual class PingPerformer : CoroutineScope {
 
-    private const val REGIONS_PING_PORT = 443
+    companion object {
+        private const val REGIONS_PING_PORT = 443
+    }
+
+    // region CoroutineScope
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.IO
+    // endregion
 
     actual fun pingEndpoints(
         endpoints: Map<String, List<String>>,
         callback: (result: Map<String, List<Pair<String, Long>>>) -> Unit
     ) {
-        runBlocking(Dispatchers.IO) {
+        async {
             val result = mutableMapOf<String, List<Pair<String, Long>>>()
             val requests: MutableList<Job> = mutableListOf()
             for ((region, endpointsInRegion) in endpoints) {
@@ -54,7 +62,7 @@ actual object PingPerformer {
                 }
             }
             requests.joinAll()
-            callback(result)
+            launch(Dispatchers.Main) { callback(result) }
         }
     }
 

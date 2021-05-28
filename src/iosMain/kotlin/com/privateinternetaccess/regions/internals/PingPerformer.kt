@@ -19,9 +19,11 @@ package com.privateinternetaccess.regions.internals
  */
 
 
-actual object PingPerformer {
+actual class PingPerformer {
 
-    private const val REGIONS_PING_PORT = 443
+    companion object {
+        private const val REGIONS_PING_PORT = 443
+    }
 
     actual fun pingEndpoints(
         endpoints: Map<String, List<String>>,
