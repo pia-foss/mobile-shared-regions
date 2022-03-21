@@ -1,38 +1,47 @@
 buildscript {
     repositories {
-        jcenter()
     }
     dependencies {
-        classpath 'org.jetbrains.kotlin:kotlin-serialization:1.4.21'
     }
 }
 
 plugins {
-    id 'org.jetbrains.kotlin.multiplatform' version '1.4.21'
-    id "org.jetbrains.kotlin.native.cocoapods" version "1.4.10"
-    id 'com.android.library'
-    id 'kotlin-android-extensions'
+    id "org.jetbrains.kotlin.multiplatform" version "$kotlin_version"
+    id "org.jetbrains.kotlin.plugin.serialization" version "$kotlin_version"
+    id "org.jetbrains.kotlin.native.cocoapods" version "$kotlin_version"
+    id "com.android.library"
+    id "kotlin-android-extensions"
 }
 
 repositories {
     google()
-    jcenter()
     mavenCentral()
 }
 
 apply plugin: 'kotlinx-serialization'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
     sourceSets.main.manifest.srcFile('src/androidMain/AndroidManifest.xml')
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion 31
+    }
+    buildTypes {
+        "release" {
+            minifyEnabled false
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path file("src/androidMain/cpp/CMakeLists.txt")
+            version "3.10.2"
+        }
     }
 }
 
 kotlin {
-    version = "1.2.2"
+    version = "1.4.0"
     cocoapods {
         summary = "Regions Module"
         homepage = "https://www.privateinternetaccess.com"
@@ -60,22 +69,27 @@ kotlin {
             implementation "org.jetbrains.kotlin:kotlin-stdlib-common"
             implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$serialization_version"
+            implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version"
         }
         commonTest.dependencies {
-            implementation "org.jetbrains.kotlin:kotlin-test"
-            implementation "org.jetbrains.kotlin:kotlin-test-junit"
+            implementation kotlin("test")
+            implementation kotlin("test-junit")
+            implementation kotlin("test-common")
+            implementation kotlin("test-annotations-common")
         }
         androidMain.dependencies {
-            implementation 'com.madgag.spongycastle:core:1.54.0.0'
+            implementation "com.madgag.spongycastle:core:1.54.0.0"
             implementation "io.ktor:ktor-client-okhttp:$ktor_version"
             implementation "org.jetbrains.kotlin:kotlin-stdlib"
-            implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
-            implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$serialization_version"
+        }
+        androidTest.dependencies {
+            implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+            implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
         }
         iosMain.dependencies {
             implementation "io.ktor:ktor-client-ios:$ktor_version"
-            implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
-            implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$serialization_version"
+        }
+        iosTest.dependencies {
         }
     }
 }

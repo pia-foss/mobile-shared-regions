@@ -19,7 +19,6 @@ package com.privateinternetaccess.regions.internals
  */
 
 import com.privateinternetaccess.regions.internals.Regions.Companion.REQUEST_TIMEOUT_MS
-import com.privateinternetaccess.regions.internals.Regions.Companion.CERTIFICATE
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.ios.Ios
 import io.ktor.client.features.HttpTimeout
@@ -30,32 +29,47 @@ import platform.Foundation.*
 import platform.Security.*
 
 
-actual object RegionHttpClient {
-    actual fun client(pinnedEndpoint: Pair<String, String>?) = HttpClient(Ios) {
-        expectSuccess = false
-        install(HttpTimeout) {
-            requestTimeoutMillis = REQUEST_TIMEOUT_MS
-        }
-        pinnedEndpoint?.let {
-            engine {
-                handleChallenge(RegionCertificatePinner(pinnedEndpoint.first, pinnedEndpoint.second))
+internal actual object RegionHttpClient {
+
+    actual fun client(
+        certificate: String?,
+        pinnedEndpoint: Pair<String, String>?
+    ): Pair<HttpClient?, Exception?> {
+        return Pair(HttpClient(Ios) {
+            expectSuccess = false
+            install(HttpTimeout) {
+                requestTimeoutMillis = REQUEST_TIMEOUT_MS
             }
-        }
+
+            if (certificate != null && pinnedEndpoint != null) {
+                engine {
+                    handleChallenge(
+                        RegionCertificatePinner(
+                            certificate,
+                            pinnedEndpoint.first,
+                            pinnedEndpoint.second
+                        )
+                    )
+                }
+            }
+        }, null)
     }
 }
 
-private class RegionCertificatePinner(private val hostname: String, private val commonName: String) : ChallengeHandler {
+private class RegionCertificatePinner(
+    certificate: String,
+    private val hostname: String,
+    private val commonName: String
+) : ChallengeHandler {
 
-    companion object {
-        private val certificateData = NSData.create(
-            base64EncodedString =
-            CERTIFICATE
-                .replace("-----BEGIN CERTIFICATE-----", "")
-                .replace("-----END CERTIFICATE-----", "")
-                .replace("\n", ""),
-            options = NSDataBase64Encoding64CharacterLineLength
-        )
-    }
+    private val certificateData = NSData.create(
+        base64EncodedString =
+        certificate
+            .replace("-----BEGIN CERTIFICATE-----", "")
+            .replace("-----END CERTIFICATE-----", "")
+            .replace("\n", ""),
+        options = NSDataBase64Encoding64CharacterLineLength
+    )
 
     override fun invoke(
         session: NSURLSession,

@@ -20,7 +20,6 @@ package com.privateinternetaccess.regions
 
 import com.privateinternetaccess.regions.internals.Regions
 import com.privateinternetaccess.regions.model.RegionsResponse
-import com.privateinternetaccess.regions.model.TranslationsGeoResponse
 
 
 public enum class RegionsProtocol(val protocol: String) {
@@ -44,23 +43,23 @@ public interface RegionsAPI {
      * Fetch all regions information for next-gen.
      *
      * @param locale `String`. Regions locale. If unknown defaults to en-us.
-     * @param callback `(response: RegionsResponse?, error: Error?)`. Invoked on the main thread.
+     * @param callback `(response: RegionsResponse?, error: List<Error>)`. Invoked on the main thread.
      */
-    fun fetchRegions(locale: String, callback: (response: RegionsResponse?, error: Error?) -> Unit)
+    fun fetchRegions(locale: String, callback: (response: RegionsResponse?, error: List<Error>) -> Unit)
 
     /**
      * Starts the process of ping requests and return the updated `ServerResponse` object as a
      * callback parameter.
      *
-     * @param callback `(response: RegionsResponse?, error: Error?)`. Invoked on the main thread.
+     * @param callback `(response: RegionsResponse?, error: List<Error>)`. Invoked on the main thread.
      */
-    fun pingRequests(callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit)
+    fun pingRequests(callback: (response: List<RegionLowerLatencyInformation>, error: List<Error>) -> Unit)
 }
 
 /**
- * Interface defining the client's data provider.
+ * Interface defining the client's endpoint provider.
  */
-public interface RegionClientStateProvider {
+public interface IRegionEndpointProvider {
 
     /**
      * It returns the list of endpoints to try to reach when performing a request. Order is relevant.
@@ -75,18 +74,46 @@ public interface RegionClientStateProvider {
  * the `RegionsAPI` interface.
  */
 public class RegionsBuilder {
-    private var clientStateProvider: RegionClientStateProvider? = null
+    private var endpointsProvider: IRegionEndpointProvider? = null
+    private var certificate: String? = null
+    private var userAgent: String? = null
 
-    fun setClientStateProvider(clientStateProvider: RegionClientStateProvider): RegionsBuilder =
-        apply { this.clientStateProvider = clientStateProvider }
+    /**
+     * It sets the endpoints provider, that is queried for the current endpoint list. Required.
+     *
+     * @param endpointsProvider `IEndPointProvider`.
+     */
+    fun setEndpointProvider(endpointsProvider: IRegionEndpointProvider): RegionsBuilder = apply {
+        this.endpointsProvider = endpointsProvider
+    }
+
+    /**
+     * It sets the certificate to use when using an endpoint with pinning enabled. Optional.
+     *
+     * @param certificate `String`.
+     */
+    fun setCertificate(certificate: String?): RegionsBuilder = apply {
+        this.certificate = certificate
+    }
+
+    /**
+     * It sets the User-Agent value to be used in the requests.
+     *
+     * @param userAgent `String`.
+     */
+    fun setUserAgent(userAgent: String): RegionsBuilder = apply {
+        this.userAgent = userAgent
+    }
 
     /**
      * @return `RegionsAPI` instance.
      */
     fun build(): RegionsAPI {
-        val clientStateProvider = this.clientStateProvider
-            ?: throw Exception("Client state provider missing.")
-        return Regions(clientStateProvider)
+        val endpointsProvider = this.endpointsProvider
+            ?: throw Exception("Endpoints provider missing.")
+        val userAgent = this.userAgent
+            ?: throw Exception("User-Agent value missing.")
+        return Regions(userAgent, endpointsProvider, certificate)
     }
 }
 

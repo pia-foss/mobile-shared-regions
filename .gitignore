@@ -46,4 +46,5 @@ apple_dist
 Preview.html
 Gemfile.lock
 build/*
+.cxx
 

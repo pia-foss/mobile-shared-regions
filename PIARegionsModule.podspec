@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
     spec.name                     = 'PIARegionsModule'
-    spec.version                  = '1.2.2'
+    spec.version                  = '1.4.0'
     spec.homepage                 = 'https://www.privateinternetaccess.com'
     spec.source            		  = { :git => "https://github.com/pia-foss/mobile-common-regions.git", :tag => "v#{spec.version}" }
     spec.authors                  = { "Jose Blaya" => "jose@privateinternetaccess.com", "Juan Docal" => "juan@privateinternetaccess.com" }
@@ -30,7 +30,7 @@ Pod::Spec.new do |spec|
 
     spec.subspec "regions" do |p|
 
-        p.source_files = "src/**/*"
+        p.source_files = "src/**/*.kt"
 
     end
 
@@ -43,7 +43,8 @@ Pod::Spec.new do |spec|
                 set -ev
                 REPO_ROOT="$PODS_TARGET_SRCROOT"
                 "$REPO_ROOT/gradlew" -p "$REPO_ROOT" :syncFramework \
-                    -Pkotlin.native.cocoapods.target=$KOTLIN_TARGET \
+                    -Pkotlin.native.cocoapods.platform=$PLATFORM_NAME \
+                    -Pkotlin.native.cocoapods.archs="$ARCHS" \
                     -Pkotlin.native.cocoapods.configuration=$CONFIGURATION \
                     -Pkotlin.native.cocoapods.cflags="$OTHER_CFLAGS" \
                     -Pkotlin.native.cocoapods.paths.headers="$HEADER_SEARCH_PATHS" \
