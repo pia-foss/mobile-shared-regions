@@ -27,7 +27,8 @@ project.properties
 *.apk
 
 # iOS
-regions.podspec
+*.podspec
+*.xcframework
 *.swp
 *.pbxuser
 **/*.xcworkspace/xcuserdata
