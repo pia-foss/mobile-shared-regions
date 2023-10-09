@@ -85,7 +85,10 @@ kotlin {
     listOf(
         iosX64(),
         iosArm64(),
-        iosSimulatorArm64()
+        iosSimulatorArm64(),
+        tvosX64(),
+        tvosSimulatorArm64(),
+        tvosArm64()
     ).forEach {
         it.binaries.framework {
             xcf.add(this)
@@ -125,11 +128,16 @@ kotlin {
         }
         val iosMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-ios:2.3.3")
+                implementation("io.ktor:ktor-client-darwin:2.3.3")
             }
         }
         val iosTest by getting {
             dependencies {
+            }
+        }
+        val tvosMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-darwin:2.3.3")
             }
         }
     }
