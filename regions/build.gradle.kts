@@ -19,24 +19,6 @@ publishing {
     }
 }
 
-// Disabled as the endpoint serving the kapps library was u
-/**
-val kappsConfiguration by configurations.creating
-
-dependencies {
-    kappsConfiguration("pia.appcomponents.mobile:kapps:29467bc5@zip")
-}
-
-tasks.register<Copy>("unzipKapps") {
-    from(zipTree(kappsConfiguration.files))
-    into(file("${rootDir}/src/androidMain/cpp"))
-}
-
-project.tasks.preBuild {
-    dependsOn("unzipKapps")
-}
-**/
-
 android {
     namespace = "com.kape.regions"
 
@@ -49,13 +31,6 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path = file("src/androidMain/cpp/CMakeLists.txt")
-            version = "3.10.2"
         }
     }
 }

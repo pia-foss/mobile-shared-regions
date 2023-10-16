@@ -24,23 +24,17 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 public data class RegionsResponse(
-    @SerialName("dynamic_roles")
-    val dynamicRoles: List<DynamicRole> = listOf(),
-    @SerialName("pubdns")
-    val pubdns: List<String> = listOf(),
+    @SerialName("groups")
+    val groups: Map<String, List<ProtocolDetails>> = mutableMapOf(),
     @SerialName("regions")
     val regions: List<Region> = listOf()
 ) {
     @Serializable
-    data class DynamicRole(
-        @SerialName("id")
-        val id: String,
+    data class ProtocolDetails(
         @SerialName("name")
-        val name: String,
-        @SerialName("resource")
-        val resource: String,
-        @SerialName("win_icon")
-        val winIcon: String,
+        val name: String = "",
+        @SerialName("ports")
+        val ports: List<Int> = listOf()
     )
 
     @Serializable
@@ -51,6 +45,8 @@ public data class RegionsResponse(
         val name: String = "",
         @SerialName("country")
         val country: String = "",
+        @SerialName("dns")
+        val dns: String = "",
         @SerialName("geo")
         val geo: Boolean = false,
         @SerialName("offline")
@@ -63,29 +59,19 @@ public data class RegionsResponse(
         val autoRegion: Boolean = false,
         @SerialName("port_forward")
         val portForward: Boolean = false,
+        @SerialName("proxy")
+        val proxy: List<String> = listOf(),
         @SerialName("servers")
-        val servers: List<Server> = listOf()
+        val servers: Map<String, List<ServerDetails>> = mapOf()
     ) {
         @Serializable
-        data class Server(
+        data class ServerDetails(
             @SerialName("ip")
-            val ip: String,
+            val ip: String = "",
             @SerialName("cn")
-            val cn: String,
-            @SerialName("fqdn")
-            val fqdn: String? = null,
-            @SerialName("services")
-            val services: List<Service> = listOf()
-        ) {
-            @Serializable
-            data class Service(
-                @SerialName("service")
-                val service: String,
-                @SerialName("ports")
-                val ports: List<Int> = listOf(),
-                @SerialName("ncp")
-                val ncp: Boolean = false
-            )
-        }
+            val cn: String = "",
+            @SerialName("van")
+            val usesVanillaOVPN: Boolean = true
+        )
     }
 }
