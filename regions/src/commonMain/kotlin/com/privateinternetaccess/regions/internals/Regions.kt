@@ -20,41 +20,24 @@ package com.privateinternetaccess.regions.internals
 
 import com.privateinternetaccess.regions.*
 import com.privateinternetaccess.regions.model.RegionsResponse
+import com.privateinternetaccess.regions.model.TranslationsGeoResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import kotlin.coroutines.CoroutineContext
 
-
-internal expect object RegionsArtifact {
-
-    /**
-     * Bootstrap the artifacts before accessing the decoding or other functionalities. e.g. load libraries, etc.
-     */
-    fun bootstrap()
-
-    /**
-     * @param regionsMetadataJson String. Json string response coming from the metadata endpoint.
-     * @param regionsJson String. Json string response coming from the regions endpoint.
-     * @param locale String. Client's locale.
-     *
-     * @return `RegionsResponse`.
-     */
-    fun decodeRegions(
-        regionsMetadataJson: String,
-        regionsJson: String,
-        locale: String
-    ): RegionsResponse?
-}
 
 internal expect object RegionHttpClient {
 
     /**
      * @param certificate String?. Certificate required for pinning capabilities.
-     * @param pinnedEndpoint Pair<String, String>?. Contains endpoint as first, commonName as second.
+     * @param pinnedEndpoint Pair<String, String>?. Contains endpoint as first,
+     * commonName as second.
      *
      * @return `Pair<HttpClient?, Exception?>`.
      */
@@ -69,8 +52,8 @@ expect class PingPerformer() {
     /**
      * @param endpoints Map<String, List<String>>. Key: Region. List<String>: Endpoints within the
      * region.
-     * @param callback Map<String, List<Pair<String, Long>>>. Key: Region. List<Pair<String, Long>>>: Endpoints and
-     * latencies within the region.
+     * @param callback Map<String, List<Pair<String, Long>>>. Key: Region.
+     * List<Pair<String, Long>>>: Endpoints and latencies within the region.
      */
     fun pingEndpoints(
         endpoints: Map<String, List<String>>,
@@ -115,16 +98,14 @@ public class Regions internal constructor(
         val region: String,
         val name: String,
         val iso: String,
+        val dns: String,
         val protocol: String,
         val endpoint: String,
         val portForwarding: Boolean
     )
 
     private val pingPerformer = PingPerformer()
-
-    init {
-        RegionsArtifact.bootstrap()
-    }
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = false }
 
     // region CoroutineScope
     override val coroutineContext: CoroutineContext
@@ -132,7 +113,10 @@ public class Regions internal constructor(
     // endregion
 
     // region RegionsCommonAPI
-    override fun fetchRegions(locale: String, callback: (response: RegionsResponse?, error: List<Error>) -> Unit) {
+    override fun fetchRegions(
+        locale: String,
+        callback: (response: RegionsResponse?, error: List<Error>) -> Unit
+    ) {
         data class FetchRegionsResult(
             val response: RegionsResponse?,
             val error: List<Error>
@@ -140,48 +124,86 @@ public class Regions internal constructor(
 
         launch {
             val deferred: CompletableDeferred<FetchRegionsResult> = CompletableDeferred()
-
-            fetchLocalizationAsync(endpointsProvider.regionEndpoints()) { metadataResponse, metadataErrors ->
+            fetchLocalizationAsync(
+                endpointsProvider.regionEndpoints()
+            ) { metadataResponse, metadataErrors ->
                 if (metadataErrors.isNotEmpty()) {
-                    deferred.complete(FetchRegionsResult(response = null, error = metadataErrors))
+                    deferred.complete(
+                        FetchRegionsResult(response = null, error = metadataErrors)
+                    )
                     return@fetchLocalizationAsync
                 }
                 if (metadataResponse == null) {
-                    deferred.complete(FetchRegionsResult(response = null, error = listOf(Error("Invalid metadata response"))))
+                    deferred.complete(
+                        FetchRegionsResult(
+                            response = null,
+                            error = listOf(Error("Invalid metadata response"))
+                        )
+                    )
                     return@fetchLocalizationAsync
                 }
 
-                val (metadataMessage, metadataKey) = processResponseIntoMessageAndKey(metadataResponse)
+                val (metadataMessage, metadataKey) =
+                    processResponseIntoMessageAndKey(metadataResponse)
                 if (!MessageVerificator.verifyMessage(metadataMessage, metadataKey)) {
-                    deferred.complete(FetchRegionsResult(response = null, error = listOf(Error("Invalid signature on metadata response"))))
+                    deferred.complete(
+                        FetchRegionsResult(
+                            response = null,
+                            error = listOf(Error("Invalid signature on metadata response"))
+                        )
+                    )
                     return@fetchLocalizationAsync
                 }
 
-                fetchRegionsAsync(endpointsProvider.regionEndpoints()) { regionsResponse, regionsErrors ->
+                fetchRegionsAsync(
+                    endpointsProvider.regionEndpoints()
+                ) { regionsResponse, regionsErrors ->
                     if (regionsErrors.isNotEmpty()) {
-                        deferred.complete(FetchRegionsResult(response = null, error = regionsErrors))
+                        deferred.complete(
+                            FetchRegionsResult(response = null, error = regionsErrors)
+                        )
                         return@fetchRegionsAsync
                     }
                     if (regionsResponse == null) {
-                        deferred.complete(FetchRegionsResult(response = null, error = listOf(Error("Invalid regions response"))))
+                        deferred.complete(
+                            FetchRegionsResult(
+                                response = null,
+                                error = listOf(Error("Invalid regions response"))
+                            )
+                        )
                         return@fetchRegionsAsync
                     }
 
-                    val (regionsMessage, regionsKey) = processResponseIntoMessageAndKey(regionsResponse)
+                    val (regionsMessage, regionsKey) =
+                        processResponseIntoMessageAndKey(regionsResponse)
                     if (!MessageVerificator.verifyMessage(regionsMessage, regionsKey)) {
-                        deferred.complete(FetchRegionsResult(response = null, error = listOf(Error("Invalid signature on regions response"))))
+                        deferred.complete(
+                            FetchRegionsResult(
+                                response = null,
+                                error = listOf(Error("Invalid signature on regions response"))
+                            )
+                        )
                         return@fetchRegionsAsync
                     }
 
-                    val knownRegionsResponse: RegionsResponse? = RegionsArtifact.decodeRegions(metadataMessage, regionsMessage, locale)
+                    val knownRegionsResponse: RegionsResponse? =
+                        decodeRegions(metadataMessage, regionsMessage, locale)
                     if (knownRegionsResponse == null) {
-                        deferred.complete(FetchRegionsResult(response = null, error = listOf(Error("There was an issue decoding data"))))
+                        deferred.complete(
+                            FetchRegionsResult(
+                                response = null,
+                                error = listOf(Error("There was an issue decoding data"))
+                            )
+                        )
                         return@fetchRegionsAsync
                     }
 
                     inMemory.saveRegion(locale, knownRegionsResponse)
                     persistence.saveRegion(locale, knownRegionsResponse)
-                    deferred.complete(FetchRegionsResult(response = knownRegionsResponse, error = emptyList()))
+                    deferred.complete(
+                        FetchRegionsResult(response =
+                        knownRegionsResponse, error = emptyList())
+                    )
                 }
             }
 
@@ -207,7 +229,9 @@ public class Regions internal constructor(
         }
     }
 
-    override fun pingRequests(callback: (response: List<RegionLowerLatencyInformation>, error: List<Error>) -> Unit) {
+    override fun pingRequests(
+        callback: (response: List<RegionLowerLatencyInformation>, error: List<Error>) -> Unit
+    ) {
         launch {
             pingRequestsAsync(
                 callback = callback
@@ -222,7 +246,101 @@ public class Regions internal constructor(
             return null
         }
 
-        return RegionsArtifact.decodeRegions(regionJsonFallback.metadataJson, regionJsonFallback.regionsJson, locale)
+        return decodeRegions(
+            regionJsonFallback.metadataJson,
+            regionJsonFallback.regionsJson,
+            locale
+        )
+    }
+
+    private fun decodeRegions(
+        metadataJson: String,
+        regionsJson: String,
+        locale: String
+    ): RegionsResponse? {
+
+        val regionsResponse: RegionsResponse?
+        val translationsGeoResponse: TranslationsGeoResponse?
+
+        try {
+            regionsResponse =
+                json.decodeFromString(RegionsResponse.serializer(), regionsJson)
+            translationsGeoResponse =
+                json.decodeFromString(TranslationsGeoResponse.serializer(), metadataJson)
+        } catch (exception: SerializationException) {
+            return null
+        }
+
+        val localizedRegions = mutableListOf<RegionsResponse.Region>()
+        for (region in regionsResponse.regions) {
+            val regionTranslations = translationsForRegion(region.name, translationsGeoResponse)
+            if (regionTranslations == null) {
+                localizedRegions.add(region)
+                continue
+            }
+            var regionTranslation = regionTranslationForLocale(locale, regionTranslations)
+            if (regionTranslation.isNullOrEmpty()) {
+                regionTranslation = region.name
+            }
+            var updatedRegion = region.copy(name = regionTranslation)
+            val regionCoordinates = coordinatesForRegionId(region.id, translationsGeoResponse)
+            if (regionCoordinates != null) {
+                updatedRegion = updatedRegion.copy(
+                    latitude = regionCoordinates.first,
+                    longitude = regionCoordinates.second
+                )
+            }
+            localizedRegions.add(updatedRegion)
+        }
+        return regionsResponse.copy(regions = localizedRegions)
+    }
+
+    private fun translationsForRegion(
+        region: String,
+        translationsGeoResponse: TranslationsGeoResponse
+    ): Map<String, String>? {
+        for ((regionName, regionTranslations) in translationsGeoResponse.translations) {
+            if (regionName.equals(region, ignoreCase = true)) {
+                return regionTranslations
+            }
+        }
+        return null
+    }
+
+    private fun regionTranslationForLocale(
+        targetLocale: String,
+        regionTranslations: Map<String, String>
+    ): String? {
+        for ((locale, translation) in regionTranslations) {
+
+            // Try with a match of the locale.
+            if (locale.equals(targetLocale, ignoreCase = true)) {
+                return translation
+            }
+
+            // Try with the language only. Regardless of the country.
+            val localeLanguage = if (targetLocale.contains("-")) {
+                targetLocale.split("-").first()
+            } else {
+                targetLocale
+            }
+            if (locale.startsWith(localeLanguage, ignoreCase = true)) {
+                return translation
+            }
+        }
+        return null
+    }
+
+    private fun coordinatesForRegionId(
+        targetRegionId: String,
+        translationsGeoResponse: TranslationsGeoResponse
+    ): Pair<String, String>? {
+        for ((regionId, coordinates) in translationsGeoResponse.gps) {
+            if (targetRegionId.equals(regionId, ignoreCase = true)) {
+                return Pair(coordinates[0], coordinates[1])
+            }
+        }
+        return null
     }
 
     private fun processResponseIntoMessageAndKey(response: String): Pair<String, String> {
@@ -257,7 +375,10 @@ public class Regions internal constructor(
             }
 
             val httpClientConfigResult = if (endpoint.usePinnedCertificate) {
-                RegionHttpClient.client(certificate, Pair(endpoint.endpoint, endpoint.certificateCommonName!!))
+                RegionHttpClient.client(
+                    certificate,
+                    Pair(endpoint.endpoint, endpoint.certificateCommonName!!)
+                )
             } else {
                 RegionHttpClient.client()
             }
@@ -282,7 +403,9 @@ public class Regions internal constructor(
             response.first?.let { httpResponse ->
                 try {
                     if (RegionsUtils.isErrorStatusCode(httpResponse.status.value)) {
-                        listErrors.add(Error("${httpResponse.status.value} ${httpResponse.status.description}"))
+                        listErrors.add(
+                            Error("${httpResponse.status.value} ${httpResponse.status.description}")
+                        )
                     } else {
                         requestResponse = httpResponse.bodyAsText()
                         succeeded = true
@@ -297,7 +420,8 @@ public class Regions internal constructor(
                 listErrors.add(Error(it.message))
             }
 
-            // If there were no errors in the request for the current endpoint. No need to try the next endpoint.
+            // If there were no errors in the request for the current endpoint.
+            // No need to try the next endpoint.
             if (succeeded) {
                 listErrors.clear()
                 break
@@ -326,7 +450,10 @@ public class Regions internal constructor(
             }
 
             val httpClientConfigResult = if (endpoint.usePinnedCertificate) {
-                RegionHttpClient.client(certificate, Pair(endpoint.endpoint, endpoint.certificateCommonName!!))
+                RegionHttpClient.client(
+                    certificate,
+                    Pair(endpoint.endpoint, endpoint.certificateCommonName!!)
+                )
             } else {
                 RegionHttpClient.client()
             }
@@ -351,7 +478,9 @@ public class Regions internal constructor(
             response.first?.let { httpResponse ->
                 try {
                     if (RegionsUtils.isErrorStatusCode(httpResponse.status.value)) {
-                        listErrors.add(Error("${httpResponse.status.value} ${httpResponse.status.description}"))
+                        listErrors.add(
+                            Error("${httpResponse.status.value} ${httpResponse.status.description}")
+                        )
                     } else {
                         requestResponse = httpResponse.bodyAsText()
                         succeeded = true
@@ -366,7 +495,8 @@ public class Regions internal constructor(
                 listErrors.add(Error(it.message))
             }
 
-            // If there were no errors in the request for the current endpoint. No need to try the next endpoint.
+            // If there were no errors in the request for the current endpoint.
+            // No need to try the next endpoint.
             if (succeeded) {
                 listErrors.clear()
                 break
@@ -381,7 +511,9 @@ public class Regions internal constructor(
     private fun handlePingRequest(
         callback: (response: List<RegionLowerLatencyInformation>, error: List<Error>) -> Unit
     ) {
-        val knownRegionsResponse: RegionsResponse? = inMemory.getRegion(locale = null).recoverCatching {
+        val knownRegionsResponse: RegionsResponse? = inMemory.getRegion(
+            locale = null
+        ).recoverCatching {
             persistence.getRegion(locale = null).getOrThrow()
         }.getOrNull()
 
@@ -438,23 +570,26 @@ public class Regions internal constructor(
         }
     }
 
-    private fun flattenEndpointsInformation(response: RegionsResponse): Map<String, List<RegionEndpointInformation>> {
+    private fun flattenEndpointsInformation(
+        response: RegionsResponse
+    ): Map<String, List<RegionEndpointInformation>> {
         val result = mutableMapOf<String, MutableList<RegionEndpointInformation>>()
         response.regions.forEach { region ->
-            region.servers.forEach { server ->
-                if (server.services.firstOrNull { it.service == RegionsProtocol.META.protocol } != null) {
-                    if (result[region.id] == null) {
-                        result[region.id] = mutableListOf()
-                    }
-                    result[region.id]?.add(RegionEndpointInformation(
-                        region.id,
-                        region.name,
-                        region.country,
-                        RegionsProtocol.META.protocol,
-                        server.ip,
-                        region.portForward
-                    ))
+            region.servers[RegionsProtocol.META.protocol]?.forEach { regionServerProtocol ->
+                if (result[region.id] == null) {
+                    result[region.id] = mutableListOf()
                 }
+                result[region.id]?.add(
+                    RegionEndpointInformation(
+                        region = region.id,
+                        name = region.name,
+                        iso = region.country,
+                        dns = region.dns,
+                        protocol = RegionsProtocol.META.protocol,
+                        endpoint = regionServerProtocol.ip,
+                        portForwarding = region.portForward
+                    )
+                )
             }
         }
         return result
