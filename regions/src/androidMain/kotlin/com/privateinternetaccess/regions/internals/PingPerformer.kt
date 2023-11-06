@@ -27,7 +27,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureTimeMillis
 
 
-actual class PingPerformer : CoroutineScope {
+internal actual class PingPerformer : CoroutineScope {
 
     companion object {
         private const val REGIONS_PING_PORT = 443
