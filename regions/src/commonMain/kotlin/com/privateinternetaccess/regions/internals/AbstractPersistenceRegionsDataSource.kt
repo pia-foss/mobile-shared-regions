@@ -1,15 +1,21 @@
 package com.privateinternetaccess.regions.internals
 
-import com.privateinternetaccess.regions.model.RegionsResponse
-import kotlinx.serialization.decodeFromString
+import com.privateinternetaccess.regions.model.ShadowsocksRegionsResponse
+import com.privateinternetaccess.regions.model.VpnRegionsResponse
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 internal abstract class AbstractPersistenceRegionsDataSource : RegionsCacheDataSource {
-    final override fun saveRegion(locale: String, regionsResponse: RegionsResponse) {
+
+    companion object {
+        private const val VPN_REGIONS_ENTRY_KEY: String = "persist_region_entry"
+        private const val SHADOWSOCKS_REGIONS_ENTRY_KEY: String = "shadowsocks-regions-entry-key"
+    }
+
+    final override fun saveVpnRegions(locale: String, response: VpnRegionsResponse) {
         val entry = CacheEntry(
             locale = locale,
-            regionsResponse = regionsResponse
+            regionsResponse = response
         )
         val jsonEntry: String = try {
             Json.encodeToString(entry)
@@ -17,11 +23,11 @@ internal abstract class AbstractPersistenceRegionsDataSource : RegionsCacheDataS
             logError(t.stackTraceToString())
             return
         }
-        storeJsonEntry(jsonEntry = jsonEntry)
+        storeJsonEntry(key = VPN_REGIONS_ENTRY_KEY, jsonEntry = jsonEntry)
     }
 
-    final override fun getRegion(locale: String?): Result<RegionsResponse> {
-        val jsonEntry: String? = retrieveJsonEntry()
+    final override fun getVpnRegions(locale: String?): Result<VpnRegionsResponse> {
+        val jsonEntry: String? = retrieveJsonEntry(key = VPN_REGIONS_ENTRY_KEY)
         if (jsonEntry.isNullOrBlank()) {
             return Result.failure(CacheError(locale))
         }
@@ -38,9 +44,42 @@ internal abstract class AbstractPersistenceRegionsDataSource : RegionsCacheDataS
         }
     }
 
+    final override fun saveShadowsocksRegions(
+        locale: String,
+        response: List<ShadowsocksRegionsResponse>
+    ) {
+        val jsonEntry: String = try {
+            Json.encodeToString(response)
+        } catch (t: Throwable) {
+            logError(t.stackTraceToString())
+            return
+        }
+        storeJsonEntry(key = SHADOWSOCKS_REGIONS_ENTRY_KEY, jsonEntry = jsonEntry)
+    }
+
+    final override fun getShadowsocksRegions(
+        locale: String?
+    ): Result<List<ShadowsocksRegionsResponse>> {
+        val jsonEntry: String? = retrieveJsonEntry(key = SHADOWSOCKS_REGIONS_ENTRY_KEY)
+        if (jsonEntry.isNullOrBlank()) {
+            return Result.failure(Error("Unknown shadowsocks entry"))
+        }
+
+        val shadowsocksRegionsEntry: List<ShadowsocksRegionsResponse> = try {
+            Json.decodeFromString(jsonEntry)
+        } catch (t: Throwable) {
+            logError(t.stackTraceToString())
+            emptyList()
+        }
+        return when {
+            shadowsocksRegionsEntry.isNotEmpty() -> Result.success(shadowsocksRegionsEntry)
+            else -> Result.failure(Error("Shadowsocks entry is empty"))
+        }
+    }
+
     protected abstract fun logError(error: String)
 
-    protected abstract fun storeJsonEntry(jsonEntry: String)
+    protected abstract fun storeJsonEntry(key: String, jsonEntry: String)
 
-    protected abstract fun retrieveJsonEntry(): String?
+    protected abstract fun retrieveJsonEntry(key: String): String?
 }

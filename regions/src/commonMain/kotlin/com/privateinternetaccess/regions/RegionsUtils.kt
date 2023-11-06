@@ -18,17 +18,17 @@ package com.privateinternetaccess.regions
  *  Internet Access Mobile Client.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import com.privateinternetaccess.regions.model.RegionsResponse
+import com.privateinternetaccess.regions.model.VpnRegionsResponse
 import kotlinx.serialization.json.Json
 
 
 object RegionsUtils {
 
-    fun stringify(regionsResponse: RegionsResponse) =
-        Json { encodeDefaults = true }.encodeToString(RegionsResponse.serializer(), regionsResponse)
+    fun stringify(regionsResponse: VpnRegionsResponse) =
+        Json { encodeDefaults = true }.encodeToString(VpnRegionsResponse.serializer(), regionsResponse)
 
     fun parse(regionsResponseString: String) =
-        Json { ignoreUnknownKeys = true }.decodeFromString(RegionsResponse.serializer(), regionsResponseString)
+        Json { ignoreUnknownKeys = true }.decodeFromString(VpnRegionsResponse.serializer(), regionsResponseString)
 
     internal fun isErrorStatusCode(code: Int): Boolean {
         when (code) {

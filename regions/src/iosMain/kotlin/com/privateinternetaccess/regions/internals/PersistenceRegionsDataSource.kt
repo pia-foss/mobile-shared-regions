@@ -15,11 +15,11 @@ internal actual class PersistenceRegionsDataSource(
         }
     }
 
-    override fun storeJsonEntry(jsonEntry: String) {
+    override fun storeJsonEntry(key: String, jsonEntry: String) {
         throw UnsupportedOperationException("not yet implemented")
     }
 
-    override fun retrieveJsonEntry(): String? {
+    override fun retrieveJsonEntry(key: String): String? {
         throw UnsupportedOperationException("not yet implemented")
     }
 

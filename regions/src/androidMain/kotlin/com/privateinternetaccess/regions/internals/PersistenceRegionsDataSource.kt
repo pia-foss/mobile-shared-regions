@@ -31,14 +31,13 @@ internal actual class PersistenceRegionsDataSource(
         }
     }
 
-    override fun storeJsonEntry(jsonEntry: String) = cache.edit()
-        .putString(RegionsDataSourceFactory.DEFAULT_CACHE_ENTRY_KEY, jsonEntry)
+    override fun storeJsonEntry(key: String, jsonEntry: String) = cache.edit()
+        .putString(key, jsonEntry)
         .apply()
 
-    override fun retrieveJsonEntry(): String? = cache.getString(RegionsDataSourceFactory.DEFAULT_CACHE_ENTRY_KEY, null)
+    override fun retrieveJsonEntry(key: String): String? = cache.getString(key, null)
 
     companion object {
         private const val TAG: String = "PersistenceRegionsDataSource"
-        private const val DEFAULT_CACHE_ENTRY_KEY: String = "persist_region_entry"
     }
 }

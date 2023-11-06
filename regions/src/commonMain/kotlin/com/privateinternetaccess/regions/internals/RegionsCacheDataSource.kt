@@ -1,9 +1,8 @@
-@file:Suppress(names = ["CanSealedSubClassBeObject"])
-
 package com.privateinternetaccess.regions.internals
 
 import com.privateinternetaccess.regions.PlatformInstancesProvider
-import com.privateinternetaccess.regions.model.RegionsResponse
+import com.privateinternetaccess.regions.model.ShadowsocksRegionsResponse
+import com.privateinternetaccess.regions.model.VpnRegionsResponse
 import kotlinx.serialization.Serializable
 
 
@@ -11,24 +10,20 @@ internal class CacheError(locale: String?) : Throwable(message = if (locale.isNu
 
 internal interface RegionsDataSourceFactory {
     fun newInMemoryDataSource(): RegionsCacheDataSource
-    fun newPersistenceRegionsDataSource(
-        preferenceName: String?
-    ): RegionsCacheDataSource
-
-    companion object {
-        const val DEFAULT_CACHE_ENTRY_KEY: String = "persist_region_entry"
-    }
+    fun newPersistenceRegionsDataSource(preferenceName: String?): RegionsCacheDataSource
 }
 
 internal interface RegionsCacheDataSource {
-    fun saveRegion(locale: String, regionsResponse: RegionsResponse)
-    fun getRegion(locale: String?): Result<RegionsResponse>
+    fun saveVpnRegions(locale: String, response: VpnRegionsResponse)
+    fun getVpnRegions(locale: String?): Result<VpnRegionsResponse>
+    fun saveShadowsocksRegions(locale: String, response: List<ShadowsocksRegionsResponse>)
+    fun getShadowsocksRegions(locale: String?): Result<List<ShadowsocksRegionsResponse>>
 }
 
 @Serializable
 internal data class CacheEntry(
     val locale: String,
-    val regionsResponse: RegionsResponse
+    val regionsResponse: VpnRegionsResponse
 )
 
 internal expect class RegionsDataSourceFactoryImpl(

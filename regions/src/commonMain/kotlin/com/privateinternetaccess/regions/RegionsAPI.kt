@@ -22,7 +22,8 @@ import com.privateinternetaccess.regions.internals.Regions
 import com.privateinternetaccess.regions.internals.RegionsCacheDataSource
 import com.privateinternetaccess.regions.internals.RegionsDataSourceFactory
 import com.privateinternetaccess.regions.internals.RegionsDataSourceFactoryImpl
-import com.privateinternetaccess.regions.model.RegionsResponse
+import com.privateinternetaccess.regions.model.ShadowsocksRegionsResponse
+import com.privateinternetaccess.regions.model.VpnRegionsResponse
 
 
 public enum class RegionsProtocol(val protocol: String) {
@@ -43,20 +44,37 @@ public const val REGIONS_PING_TIMEOUT: Int = 1500
 public interface RegionsAPI {
 
     /**
-     * Fetch all regions information for next-gen.
+     * Fetch all vpn regions information.
      *
      * @param locale `String`. Regions locale. If unknown defaults to en-us.
-     * @param callback `(response: RegionsResponse?, error: List<Error>)`. Invoked on the main thread.
+     * @param callback `(response: RegionsResponse?, error: Error?)`. Invoked on the main thread.
      */
-    fun fetchRegions(locale: String, callback: (response: RegionsResponse?, error: List<Error>) -> Unit)
+    fun fetchVpnRegions(
+        locale: String,
+        callback: (response: VpnRegionsResponse?, error: Error?) -> Unit
+    )
+
+    /**
+     * Fetch all shadowsocks regions information.
+     *
+     * @param locale `String`. Regions locale. If unknown defaults to en-us.
+     * @param callback `(response: List<ShadowsocksRegionsResponse>, error: Error?)`.
+     * Invoked on the main thread.
+     */
+    fun fetchShadowsocksRegions(
+        locale: String,
+        callback: (response: List<ShadowsocksRegionsResponse>, error: Error?) -> Unit
+    )
 
     /**
      * Starts the process of ping requests and return the updated `ServerResponse` object as a
      * callback parameter.
      *
-     * @param callback `(response: RegionsResponse?, error: List<Error>)`. Invoked on the main thread.
+     * @param callback `(response: RegionsResponse?, error: Error?)`. Invoked on the main thread.
      */
-    fun pingRequests(callback: (response: List<RegionLowerLatencyInformation>, error: List<Error>) -> Unit)
+    fun pingRequests(
+        callback: (response: List<RegionLowerLatencyInformation>, error: Error?) -> Unit
+    )
 }
 
 /**
@@ -88,7 +106,8 @@ public class RegionsBuilder {
     private var endpointsProvider: IRegionEndpointProvider? = null
     private var certificate: String? = null
     private var userAgent: String? = null
-    private var regionsListRequestPath: String? = null
+    private var vpnRegionsRequestPath: String? = null
+    private var shadowsocksRegionsRequestPath: String? = null
     private var metadataRequestPath: String? = null
     private var regionJsonFallback: RegionJsonFallback? = null
     private var platformInstancesProvider: PlatformInstancesProvider? = null
@@ -123,12 +142,21 @@ public class RegionsBuilder {
     }
 
     /**
-     * It set the path to be used by the requests retrieving the regions list.
+     * It set the path to be used by the requests retrieving the vpn regions list.
      *
-     * @param regionsListRequestPath `String`.
+     * @param vpnRegionsRequestPath `String`.
      */
-    fun setRegionsListRequestPath(regionsListRequestPath: String): RegionsBuilder = apply {
-        this.regionsListRequestPath = regionsListRequestPath
+    fun setVpnRegionsRequestPath(vpnRegionsRequestPath: String): RegionsBuilder = apply {
+        this.vpnRegionsRequestPath = vpnRegionsRequestPath
+    }
+
+    /**
+     * It set the path to be used by the requests retrieving the shadowsocks regions list.
+     *
+     * @param shadowsocksRegionsRequestPath `String`.
+     */
+    fun setShadowsocksRegionsRequestPath(shadowsocksRegionsRequestPath: String): RegionsBuilder = apply {
+        this.shadowsocksRegionsRequestPath = shadowsocksRegionsRequestPath
     }
 
     /**
@@ -158,7 +186,8 @@ public class RegionsBuilder {
     }
 
     /**
-     * It defines the name to use by the persistence framework. Optional. If undefined, a default will be used instead.
+     * It defines the name to use by the persistence framework. Optional.
+     * If undefined, a default will be used instead.
      */
     fun setPersistencePreferenceName(name: String?) = apply {
         this.persistencePreferenceName = if (name.isNullOrBlank()) null else name.trim()
@@ -179,8 +208,10 @@ public class RegionsBuilder {
             ?: throw Exception("Endpoints provider missing.")
         val userAgent = this.userAgent
             ?: throw Exception("User-Agent value missing.")
-        val regionsListRequestPath = this.regionsListRequestPath
-            ?: throw Exception("Regions list request path missing.")
+        val vpnRegionsRequestPath = this.vpnRegionsRequestPath
+            ?: throw Exception("Vpn regions request path missing.")
+        val shadowsocksRegionsRequestPath = this.shadowsocksRegionsRequestPath
+            ?: throw Exception("Shadowsocks regions request path missing.")
         val metadataRequestPath = this.metadataRequestPath
             ?: throw Exception("Metadata request path missing.")
         val platformInstancesProvider = this.platformInstancesProvider
@@ -199,7 +230,8 @@ public class RegionsBuilder {
 
         return Regions(
             userAgent = userAgent,
-            regionsListRequestPath = regionsListRequestPath,
+            vpnRegionsRequestPath = vpnRegionsRequestPath,
+            shadowsocksRegionsRequestPath = shadowsocksRegionsRequestPath,
             metadataRequestPath = metadataRequestPath,
             regionJsonFallback = regionJsonFallback,
             endpointsProvider = endpointsProvider,
@@ -213,11 +245,13 @@ public class RegionsBuilder {
 /**
  * Data class defining the required json information for a successful fallback response.
  *
- * @param regionsJson `String`.
+ * @param vpnRegionsJson `String`.
+ * @param shadowsocksRegionsJson `String`.
  * @param metadataJson `String`.
  */
 public data class RegionJsonFallback(
-    val regionsJson: String,
+    val vpnRegionsJson: String,
+    val shadowsocksRegionsJson: String,
     val metadataJson: String
 )
 
