@@ -1,7 +1,7 @@
 package com.privateinternetaccess.regions
 
 /**
- * iOs specific interface to provide platform specific instances to the library.
+ * iOS specific interface to provide platform specific instances to the library.
  *
  * Note: An instance implementing this interface does not need to be provided to a RegionsBuilder instance, because this provider is not used in the iOs implementation yet.
  */

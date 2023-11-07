@@ -1,7 +1,6 @@
 package com.privateinternetaccess.regions.internals
 
 import com.privateinternetaccess.regions.PlatformInstancesProvider
-import com.privateinternetaccess.regions.internals.RegionsDataSourceFactory.Companion.DEFAULT_CACHE_ENTRY_KEY
 
 internal actual class RegionsDataSourceFactoryImpl actual constructor(
     platformProvider: PlatformInstancesProvider?,

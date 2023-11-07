@@ -23,7 +23,7 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable
-public data class RegionsResponse(
+public data class VpnRegionsResponse(
     @SerialName("groups")
     val groups: Map<String, List<ProtocolDetails>> = mutableMapOf(),
     @SerialName("regions")

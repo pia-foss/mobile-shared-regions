@@ -25,7 +25,7 @@ import java.security.spec.InvalidKeySpecException
 import java.security.spec.X509EncodedKeySpec
 
 
-actual object MessageVerificator {
+internal actual object MessageVerificator {
 
     actual fun verifyMessage(message: String, key: String): Boolean {
         try {

@@ -67,13 +67,27 @@ class RegionsAPITest {
     }
 
     @Test
+    fun `Test missing shadowsocks request path information`() {
+        assertFailsWith(Exception::class) {
+            RegionsBuilder()
+                .setEndpointProvider(MockEndpointProvider())
+                .setCertificate("test-certificate")
+                .setUserAgent("test-user-agent")
+                .setMetadataRequestPath("metadata-request-path")
+                .setVpnRegionsRequestPath("vpn-regions-request-path")
+                .build()
+        }
+    }
+
+    @Test
     fun `Test missing metadata request path information`() {
         assertFailsWith(Exception::class) {
             RegionsBuilder()
                 .setEndpointProvider(MockEndpointProvider())
                 .setCertificate("test-certificate")
                 .setUserAgent("test-user-agent")
-                .setRegionsListRequestPath("regions-list-request-path")
+                .setVpnRegionsRequestPath("vpn-regions-request-path")
+                .setShadowsocksRegionsRequestPath("shadowsocks-regions-request-path")
                 .build()
         }
     }
@@ -95,7 +109,8 @@ class RegionsAPITest {
             .setEndpointProvider(MockEndpointProvider())
             .setCertificate("test-certificate")
             .setUserAgent("test-user-agent")
-            .setRegionsListRequestPath("regions-list-request-path")
+            .setVpnRegionsRequestPath("vpn-regions-request-path")
+            .setShadowsocksRegionsRequestPath("shadowsocks-regions-request-path")
             .setMetadataRequestPath("metadata-request-path")
             .build()
     }
