@@ -28,7 +28,7 @@ import platform.Security.*
 import platform.posix.memcpy
 
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
-actual object MessageVerificator {
+internal actual object MessageVerificator {
 
     actual fun verifyMessage(message: String, key: String): Boolean {
         val publicKeyData = NSData.create(
