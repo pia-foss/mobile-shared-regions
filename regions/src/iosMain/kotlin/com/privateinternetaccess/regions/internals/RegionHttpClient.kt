@@ -21,9 +21,8 @@ package com.privateinternetaccess.regions.internals
 import com.privateinternetaccess.regions.internals.Regions.Companion.REQUEST_TIMEOUT_MS
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.*
-import io.ktor.client.engine.ios.Ios
-import io.ktor.client.plugins.*
 import io.ktor.client.engine.ios.*
+import io.ktor.client.plugins.*
 import kotlinx.cinterop.*
 import platform.CoreFoundation.*
 import platform.Foundation.*
@@ -36,7 +35,7 @@ internal actual object RegionHttpClient {
         certificate: String?,
         pinnedEndpoint: Pair<String, String>?
     ): Pair<HttpClient?, Exception?> {
-        return Pair(HttpClient(Ios) {
+        return Pair(HttpClient(Darwin) {
             expectSuccess = false
             install(HttpTimeout) {
                 requestTimeoutMillis = REQUEST_TIMEOUT_MS
