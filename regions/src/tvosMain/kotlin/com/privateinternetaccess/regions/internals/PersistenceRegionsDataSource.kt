@@ -1,12 +1,15 @@
 package com.privateinternetaccess.regions.internals
+import platform.Foundation.NSUserDefaults
 
 internal actual class PersistenceRegionsDataSource(
     preferenceName: String? = null,
     private val logErrors: Boolean
 ) : RegionsCacheDataSource, AbstractPersistenceRegionsDataSource() {
 
+    private val userDefaults: NSUserDefaults
+
     init {
-        throw UnsupportedOperationException("not yet implemented")
+        userDefaults = NSUserDefaults(suiteName = preferenceName ?: "PersistenceRegionsDataSource")
     }
 
     override fun logError(error: String) {
@@ -16,11 +19,12 @@ internal actual class PersistenceRegionsDataSource(
     }
 
     override fun storeJsonEntry(key: String, jsonEntry: String) {
-        throw UnsupportedOperationException("not yet implemented")
+        userDefaults.setObject(jsonEntry, forKey = key)
+        userDefaults.synchronize()
     }
 
     override fun retrieveJsonEntry(key: String): String? {
-        throw UnsupportedOperationException("not yet implemented")
+        return userDefaults.stringForKey(key)
     }
 
     companion object {
