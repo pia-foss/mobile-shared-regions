@@ -44,7 +44,8 @@ internal actual class PingPerformer : CoroutineScope {
         callback: (result: Map<String, List<Pair<String, Long>>>) -> Unit
     ) {
         async {
-            val result = mutableMapOf<String, List<Pair<String, Long>>>()
+            val syncResult =
+                Collections.synchronizedMap(mutableMapOf<String, List<Pair<String, Long>>>())
             val requests: MutableList<Job> = mutableListOf()
             for ((region, endpointsInRegion) in endpoints) {
                 val syncRegionEndpointsResults =
@@ -59,12 +60,12 @@ internal actual class PingPerformer : CoroutineScope {
                             REGIONS_PING_TIMEOUT.toLong()
                         } ?: latency
                         syncRegionEndpointsResults.add(Pair(it, latency))
-                        result[region] = syncRegionEndpointsResults
+                        syncResult[region] = syncRegionEndpointsResults
                     })
                 }
             }
             requests.joinAll()
-            launch(Dispatchers.Main) { callback(result) }
+            launch(Dispatchers.Main) { callback(syncResult) }
         }
     }
 
