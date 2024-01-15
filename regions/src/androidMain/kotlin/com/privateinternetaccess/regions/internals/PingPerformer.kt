@@ -23,6 +23,7 @@ import kotlinx.coroutines.*
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.Collections
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureTimeMillis
 
@@ -43,10 +44,12 @@ internal actual class PingPerformer : CoroutineScope {
         callback: (result: Map<String, List<Pair<String, Long>>>) -> Unit
     ) {
         async {
-            val result = mutableMapOf<String, List<Pair<String, Long>>>()
+            val syncResult =
+                Collections.synchronizedMap(mutableMapOf<String, List<Pair<String, Long>>>())
             val requests: MutableList<Job> = mutableListOf()
             for ((region, endpointsInRegion) in endpoints) {
-                val regionEndpointsResults = mutableListOf<Pair<String, Long>>()
+                val syncRegionEndpointsResults =
+                    Collections.synchronizedList(mutableListOf<Pair<String, Long>>())
                 endpointsInRegion.forEach {
                     requests.add(async(Dispatchers.IO) {
                         var error: Error? = null
@@ -56,13 +59,13 @@ internal actual class PingPerformer : CoroutineScope {
                         latency = error?.let {
                             REGIONS_PING_TIMEOUT.toLong()
                         } ?: latency
-                        regionEndpointsResults.add(Pair(it, latency))
-                        result[region] = regionEndpointsResults
+                        syncRegionEndpointsResults.add(Pair(it, latency))
+                        syncResult[region] = syncRegionEndpointsResults
                     })
                 }
             }
             requests.joinAll()
-            launch(Dispatchers.Main) { callback(result) }
+            launch(Dispatchers.Main) { callback(syncResult) }
         }
     }
 
