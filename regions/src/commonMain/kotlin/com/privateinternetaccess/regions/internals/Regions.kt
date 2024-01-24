@@ -321,9 +321,11 @@ public class Regions internal constructor(
 
         val localizedRegions = mutableListOf<ShadowsocksRegionsResponse>()
         for (region in shadowsocksRegionsResponse) {
-            val regionTranslation = shadowsocksRegionTranslation(region.region, vpnRegionsResponse)
-                ?: continue
-            localizedRegions.add(region.copy(region = regionTranslation))
+            shadowsocksRegionTranslation(region.region, vpnRegionsResponse)?.let { translation ->
+                shadowsocksRegionIso(region.region, vpnRegionsResponse)?.let { iso ->
+                    localizedRegions.add(region.copy(iso = iso, region = translation))
+                }
+            }
         }
         return Result.success(localizedRegions)
     }
@@ -369,9 +371,20 @@ public class Regions internal constructor(
         vpnRegionsResponse: VpnRegionsResponse
     ): String? {
         for (region in vpnRegionsResponse.regions) {
-
-            if (region.id.startsWith(shadowsocksRegion, ignoreCase = true)) {
+            if (region.id.equals(shadowsocksRegion, ignoreCase = true)) {
                 return region.name
+            }
+        }
+        return null
+    }
+
+    private fun shadowsocksRegionIso(
+        shadowsocksRegion: String,
+        vpnRegionsResponse: VpnRegionsResponse
+    ): String? {
+        for (region in vpnRegionsResponse.regions) {
+            if (region.id.equals(shadowsocksRegion, ignoreCase = true)) {
+                return region.country
             }
         }
         return null

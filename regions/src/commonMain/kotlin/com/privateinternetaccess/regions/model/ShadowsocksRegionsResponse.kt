@@ -18,20 +18,15 @@ package com.privateinternetaccess.regions.model
  *  Internet Access Mobile Client.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 
 @Serializable
 public data class ShadowsocksRegionsResponse(
-    @SerialName("region")
+    val iso: String = "world",
     val region: String,
-    @SerialName("host")
     val host: String,
-    @SerialName("port")
     val port: Int,
-    @SerialName("key")
     val key: String,
-    @SerialName("cipher")
     val cipher: String
 )
