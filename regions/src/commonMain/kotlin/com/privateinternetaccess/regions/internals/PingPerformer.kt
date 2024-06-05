@@ -3,13 +3,11 @@ package com.privateinternetaccess.regions.internals
 internal expect class PingPerformer() {
 
     /**
-     * @param endpoints Map<String, List<String>>. Key: Region. List<String>: Endpoints within the
-     * region.
-     * @param callback Map<String, List<Pair<String, Long>>>. Key: Region.
-     * List<Pair<String, Long>>>: Endpoints and latencies within the region.
+     * @param endpoints Map<String, String>. Key: Region. String: Endpoint to ping in the region.
+     * @param callback Map<String, Long>. Key: Region. Value: Latency.
      */
     fun pingEndpoints(
-        endpoints: Map<String, List<String>>,
-        callback: (result: Map<String, List<Pair<String, Long>>>) -> Unit
+        endpoints: Map<String, String>,
+        callback: (result: Map<String, Long>) -> Unit
     )
 }

@@ -26,10 +26,10 @@ internal actual class PingPerformer {
     }
 
     actual fun pingEndpoints(
-        endpoints: Map<String, List<String>>,
-        callback: (result: Map<String, List<Pair<String, Long>>>) -> Unit
+        endpoints: Map<String, String>,
+        callback: (result: Map<String, Long>) -> Unit
     ) {
-        val result = mutableMapOf<String, List<Pair<String, Long>>>()
+        val result = mutableMapOf<String, Long>()
         callback(result)
     }
 }
