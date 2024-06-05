@@ -259,12 +259,10 @@ public data class RegionJsonFallback(
  * Data class defining the response object for a ping request. @see `fun pingRequests(...)`.
  *
  * @param region `String`.
- * @param endpoint `String`.
  * @param latency `String`.
  */
 public data class RegionLowerLatencyInformation(
     val region: String,
-    val endpoint: String,
     val latency: Long
 )
 

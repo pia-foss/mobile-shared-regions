@@ -40,29 +40,23 @@ internal actual class PingPerformer : CoroutineScope {
     // endregion
 
     actual fun pingEndpoints(
-        endpoints: Map<String, List<String>>,
-        callback: (result: Map<String, List<Pair<String, Long>>>) -> Unit
+        endpoints: Map<String, String>,
+        callback: (result: Map<String, Long>) -> Unit
     ) {
         async {
-            val syncResult =
-                Collections.synchronizedMap(mutableMapOf<String, List<Pair<String, Long>>>())
+            val syncResult = Collections.synchronizedMap(mutableMapOf<String, Long>())
             val requests: MutableList<Job> = mutableListOf()
-            for ((region, endpointsInRegion) in endpoints) {
-                val syncRegionEndpointsResults =
-                    Collections.synchronizedList(mutableListOf<Pair<String, Long>>())
-                endpointsInRegion.forEach {
-                    requests.add(async(Dispatchers.IO) {
-                        var error: Error? = null
-                        var latency = measureTimeMillis {
-                            error = ping(it)
-                        }
-                        latency = error?.let {
-                            REGIONS_PING_TIMEOUT.toLong()
-                        } ?: latency
-                        syncRegionEndpointsResults.add(Pair(it, latency))
-                        syncResult[region] = syncRegionEndpointsResults
-                    })
-                }
+            for ((region, endpointInRegion) in endpoints) {
+                requests.add(async(Dispatchers.IO) {
+                    var error: Error?
+                    var latency = measureTimeMillis {
+                        error = ping(endpointInRegion)
+                    }
+                    latency = error?.let {
+                        REGIONS_PING_TIMEOUT.toLong()
+                    } ?: latency
+                    syncResult[region] = latency
+                })
             }
             requests.joinAll()
             launch(Dispatchers.Main) { callback(syncResult) }

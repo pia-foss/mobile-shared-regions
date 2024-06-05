@@ -520,61 +520,36 @@ public class Regions internal constructor(
         regionsResponse: VpnRegionsResponse,
         callback: (response: List<RegionLowerLatencyInformation>) -> Unit
     ) {
-        val endpointsToPing = mutableMapOf<String, List<String>>()
-        val lowerLatencies = mutableListOf<RegionLowerLatencyInformation>()
+        val endpointsToPing = mutableMapOf<String, String>()
+        val latencies = mutableListOf<RegionLowerLatencyInformation>()
 
         val allKnownEndpointsDetails = flattenEndpointsInformation(regionsResponse)
         for ((region, regionEndpointInformation) in allKnownEndpointsDetails) {
-            val regionEndpoints = mutableListOf<String>()
-            regionEndpointInformation.forEach {
-                regionEndpoints.add(it.endpoint)
-            }
-            endpointsToPing[region] = regionEndpoints
+            endpointsToPing[region] = regionEndpointInformation.endpoint
         }
 
         pingPerformer.pingEndpoints(endpointsToPing) { latencyResults ->
-            for ((region, results) in latencyResults) {
-                if (results.isEmpty()) {
-                    continue
-                }
-
-                results.minByOrNull { it.second }?.let { minEndpointLatency ->
-                    allKnownEndpointsDetails[region]?.let { allKnownEndpointsDetails ->
-                        allKnownEndpointsDetails.firstOrNull {
-                            it.endpoint == minEndpointLatency.first
-                        }?.let { minEndpointLatencyDetails ->
-                            lowerLatencies.add(RegionLowerLatencyInformation(
-                                minEndpointLatencyDetails.region,
-                                minEndpointLatencyDetails.endpoint,
-                                minEndpointLatency.second
-                            ))
-                        }
-                    }
-                }
+            for ((region, latency) in latencyResults) {
+                latencies.add(RegionLowerLatencyInformation(region, latency))
             }
-            callback(lowerLatencies)
+            callback(latencies)
         }
     }
 
     private fun flattenEndpointsInformation(
         response: VpnRegionsResponse
-    ): Map<String, List<RegionEndpointInformation>> {
-        val result = mutableMapOf<String, MutableList<RegionEndpointInformation>>()
+    ): Map<String, RegionEndpointInformation> {
+        val result = mutableMapOf<String, RegionEndpointInformation>()
         response.regions.forEach { region ->
-            region.servers[RegionsProtocol.META.protocol]?.forEach { regionServerProtocol ->
-                if (result[region.id] == null) {
-                    result[region.id] = mutableListOf()
-                }
-                result[region.id]?.add(
-                    RegionEndpointInformation(
-                        region = region.id,
-                        name = region.name,
-                        iso = region.country,
-                        dns = region.dns,
-                        protocol = RegionsProtocol.META.protocol,
-                        endpoint = regionServerProtocol.ip,
-                        portForwarding = region.portForward
-                    )
+            region.servers[RegionsProtocol.META.protocol]?.firstOrNull()?.let {
+                result[region.id] = RegionEndpointInformation(
+                    region = region.id,
+                    name = region.name,
+                    iso = region.country,
+                    dns = region.dns,
+                    protocol = RegionsProtocol.META.protocol,
+                    endpoint = it.ip,
+                    portForwarding = region.portForward
                 )
             }
         }
