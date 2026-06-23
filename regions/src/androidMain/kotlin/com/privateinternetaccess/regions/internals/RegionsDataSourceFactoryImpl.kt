@@ -8,9 +8,9 @@ internal actual class RegionsDataSourceFactoryImpl actual constructor(
 ): RegionsDataSourceFactory {
     private val platformProvider: PlatformInstancesProvider = platformProvider ?: throw NullPointerException("platform provider may not be null")
 
-    override fun newInMemoryDataSource(): RegionsCacheDataSource = InMemoryRegionsCacheDataSource()
+    actual override fun newInMemoryDataSource(): RegionsCacheDataSource = InMemoryRegionsCacheDataSource()
 
-    override fun newPersistenceRegionsDataSource(
+    actual override fun newPersistenceRegionsDataSource(
         preferenceName: String?
     ): RegionsCacheDataSource = PersistenceRegionsDataSource(
         provider = platformProvider,

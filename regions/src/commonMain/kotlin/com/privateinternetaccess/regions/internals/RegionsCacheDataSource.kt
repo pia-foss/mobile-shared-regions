@@ -29,6 +29,22 @@ internal data class CacheEntry(
 internal expect class RegionsDataSourceFactoryImpl(
     platformProvider: PlatformInstancesProvider?,
     logErrors: Boolean
-): RegionsDataSourceFactory
+): RegionsDataSourceFactory {
+    override fun newInMemoryDataSource(): RegionsCacheDataSource
+    override fun newPersistenceRegionsDataSource(preferenceName: String?): RegionsCacheDataSource
+}
 
-internal expect class PersistenceRegionsDataSource : RegionsCacheDataSource
+internal expect class PersistenceRegionsDataSource : RegionsCacheDataSource {
+    override fun saveVpnRegions(
+        locale: String,
+        response: VpnRegionsResponse
+    )
+
+    override fun getVpnRegions(locale: String?): Result<VpnRegionsResponse>
+    override fun saveShadowsocksRegions(
+        locale: String,
+        response: List<ShadowsocksRegionsResponse>
+    )
+
+    override fun getShadowsocksRegions(locale: String?): Result<List<ShadowsocksRegionsResponse>>
+}
