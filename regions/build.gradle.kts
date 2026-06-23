@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
     kotlin("multiplatform")
@@ -55,26 +54,6 @@ kotlin {
         }
     }
 
-    // iOS
-    val xcf = XCFramework()
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64(),
-        tvosX64(),
-        tvosSimulatorArm64(),
-        tvosArm64()
-    ).forEach {
-        val main by it.compilations.getting {
-            val fixUndefinedSymbols by cinterops.creating {
-                defFile(project.file("src/iosMain/kotlin/com/privateinternetaccess/regions/internals/cinterop/fix_undefined_symbols.def"))
-            }
-        }
-        it.binaries.framework {
-            xcf.add(this)
-        }
-    }
-
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -103,20 +82,6 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
-            }
-        }
-        val iosMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-darwin:3.1.0")
-            }
-        }
-        val iosTest by getting {
-            dependencies {
-            }
-        }
-        val tvosMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-darwin:3.1.0")
             }
         }
     }
