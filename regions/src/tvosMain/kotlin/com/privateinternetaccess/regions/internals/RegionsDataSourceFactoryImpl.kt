@@ -7,10 +7,10 @@ internal actual class RegionsDataSourceFactoryImpl actual constructor(
     private val logErrors: Boolean
 ): RegionsDataSourceFactory {
 
-    actual override fun newInMemoryDataSource(): RegionsCacheDataSource =
+    override fun newInMemoryDataSource(): RegionsCacheDataSource =
         InMemoryRegionsCacheDataSource()
 
-    actual override fun newPersistenceRegionsDataSource(
+    override fun newPersistenceRegionsDataSource(
         preferenceName: String?
     ): RegionsCacheDataSource = PersistenceRegionsDataSource(
         preferenceName = preferenceName,

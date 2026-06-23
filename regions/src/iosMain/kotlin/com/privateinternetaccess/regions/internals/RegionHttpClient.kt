@@ -1,5 +1,3 @@
-@file:Suppress("ARGUMENT_TYPE_MISMATCH")
-
 package com.privateinternetaccess.regions.internals
 
 /*
@@ -23,6 +21,7 @@ package com.privateinternetaccess.regions.internals
 import com.privateinternetaccess.regions.internals.Regions.Companion.REQUEST_TIMEOUT_MS
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.*
+import io.ktor.client.engine.ios.*
 import io.ktor.client.plugins.*
 import kotlinx.cinterop.*
 import platform.CoreFoundation.*
@@ -45,7 +44,7 @@ internal actual object RegionHttpClient {
             if (certificate != null && pinnedEndpoint != null) {
                 engine {
                     handleChallenge(
-                        buildCertificatePinnerHandler(
+                        RegionCertificatePinner(
                             certificate,
                             pinnedEndpoint.first,
                             pinnedEndpoint.second
@@ -57,13 +56,14 @@ internal actual object RegionHttpClient {
     }
 }
 
-@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
-private fun buildCertificatePinnerHandler(
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+private class RegionCertificatePinner(
     certificate: String,
-    hostname: String,
-    commonName: String
-): ChallengeHandler {
-    val certificateData = NSData.create(
+    private val hostname: String,
+    private val commonName: String
+) : ChallengeHandler {
+
+    private val certificateData = NSData.create(
         base64EncodedString =
         certificate
             .replace("-----BEGIN CERTIFICATE-----", "")
@@ -72,53 +72,59 @@ private fun buildCertificatePinnerHandler(
         options = NSDataBase64Encoding64CharacterLineLength
     )
 
-    return { _, _, challenge, completionHandler ->
+    override fun invoke(
+        session: NSURLSession,
+        task: NSURLSessionTask,
+        challenge: NSURLAuthenticationChallenge,
+        completionHandler: (NSURLSessionAuthChallengeDisposition, NSURLCredential?) -> Unit
+    ) {
         if (challenge.protectionSpace.authenticationMethod != NSURLAuthenticationMethodServerTrust) {
             challenge.sender?.cancelAuthenticationChallenge(challenge)
             completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, null)
-        } else {
-            val serverTrust = challenge.protectionSpace.serverTrust
-            val serverCertificateRef = SecTrustGetCertificateAtIndex(serverTrust, 0)
-            val certificateDataRef = CFBridgingRetain(certificateData) as CFDataRef
-            val certificateRef = SecCertificateCreateWithData(null, certificateDataRef)
-            val policyRef = SecPolicyCreateSSL(true, null)
+            return
+        }
 
-            memScoped {
-                var preparationSucceeded = true
-                val serverCommonNameRef = alloc<CFStringRefVar>()
-                SecCertificateCopyCommonName(serverCertificateRef, serverCommonNameRef.ptr)
-                val commonNameEvaluationSucceeded = (commonName == CFBridgingRelease(serverCommonNameRef.value))
-                val hostNameEvaluationSucceeded = (hostname == challenge.protectionSpace.host)
+        val serverTrust = challenge.protectionSpace.serverTrust
+        val serverCertificateRef = SecTrustGetCertificateAtIndex(serverTrust, 0)
+        val certificateDataRef = CFBridgingRetain(certificateData) as CFDataRef
+        val certificateRef = SecCertificateCreateWithData(null, certificateDataRef)
+        val policyRef = SecPolicyCreateSSL(true, null)
 
-                val trust = alloc<SecTrustRefVar>()
-                val trustCreation = SecTrustCreateWithCertificates(serverCertificateRef, policyRef, trust.ptr)
-                if (trustCreation != errSecSuccess) {
-                    preparationSucceeded = false
-                }
+        memScoped {
+            var preparationSucceeded = true
+            val serverCommonNameRef = alloc<CFStringRefVar>()
+            SecCertificateCopyCommonName(serverCertificateRef, serverCommonNameRef.ptr)
+            val commonNameEvaluationSucceeded = (commonName == CFBridgingRelease(serverCommonNameRef.value))
+            val hostNameEvaluationSucceeded = (hostname == challenge.protectionSpace.host)
 
-                val mutableArrayRef = CFArrayCreateMutable(kCFAllocatorDefault, 1, null)
-                CFArrayAppendValue(mutableArrayRef, certificateRef)
-
-                val trustAnchor = SecTrustSetAnchorCertificates(trust.value, mutableArrayRef)
-                if (trustAnchor != errSecSuccess) {
-                    preparationSucceeded = false
-                }
-
-                val error = alloc<CFErrorRefVar>()
-                val certificateEvaluationSucceeded = SecTrustEvaluateWithError(trust.value, error.ptr)
-                challenge.sender?.useCredential(NSURLCredential.create(serverTrust), challenge)
-                if (preparationSucceeded && hostNameEvaluationSucceeded && commonNameEvaluationSucceeded && certificateEvaluationSucceeded) {
-                    completionHandler(NSURLSessionAuthChallengeUseCredential, NSURLCredential.create(serverTrust))
-                } else {
-                    completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, null)
-                }
-
-                CFRelease(serverCertificateRef)
-                CFRelease(certificateDataRef)
-                CFRelease(certificateRef)
-                CFRelease(policyRef)
-                CFRelease(mutableArrayRef)
+            val trust = alloc<SecTrustRefVar>()
+            val trustCreation = SecTrustCreateWithCertificates(serverCertificateRef, policyRef, trust.ptr)
+            if (trustCreation != errSecSuccess) {
+                preparationSucceeded = false
             }
+
+            val mutableArrayRef = CFArrayCreateMutable(kCFAllocatorDefault, 1, null)
+            CFArrayAppendValue(mutableArrayRef, certificateRef)
+
+            val trustAnchor = SecTrustSetAnchorCertificates(trust.value, mutableArrayRef)
+            if (trustAnchor != errSecSuccess) {
+                preparationSucceeded = false
+            }
+
+            val error = alloc<CFErrorRefVar>()
+            val certificateEvaluationSucceeded = SecTrustEvaluateWithError(trust.value, error.ptr)
+            challenge.sender?.useCredential(NSURLCredential.create(serverTrust), challenge)
+            if (preparationSucceeded && hostNameEvaluationSucceeded && commonNameEvaluationSucceeded && certificateEvaluationSucceeded) {
+                completionHandler(NSURLSessionAuthChallengeUseCredential, NSURLCredential.create(serverTrust))
+            } else {
+                completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, null)
+            }
+
+            CFRelease(serverCertificateRef)
+            CFRelease(certificateDataRef)
+            CFRelease(certificateRef)
+            CFRelease(policyRef)
+            CFRelease(mutableArrayRef)
         }
     }
 }
