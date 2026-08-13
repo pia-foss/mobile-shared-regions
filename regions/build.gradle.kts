@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
     id("maven-publish")
 }
 
@@ -19,25 +19,10 @@ publishing {
     }
 }
 
-android {
-    namespace = "com.kape.regions"
-
-    compileSdk = 35
-    defaultConfig {
-        minSdk = 21
-    }
-
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-    }
-}
-
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 kotlin {
     group = "com.kape.android"
-    version = "1.7.3"
+    version = "1.7.4"
 
     jvmToolchain(17)
 
@@ -47,8 +32,13 @@ kotlin {
     applyDefaultHierarchyTemplate()
 
     // Android
-    androidTarget {
-        publishLibraryVariants("release")
+    android {
+        namespace = "com.kape.regions"
+        compileSdk = 35
+        minSdk = 21
+
+        withHostTestBuilder {}.configure {}
+
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
@@ -78,7 +68,7 @@ kotlin {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib")
             }
         }
-        val androidUnitTest by getting {
+        val androidHostTest by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
