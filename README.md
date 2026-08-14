@@ -28,13 +28,13 @@ type in what folder you want to put in without the **
 
 #### Building
 
-Once the project is cloned, you can build the binaries by running the tasks `./gradlew bundleDebugAar` or `./gradlew bundleReleaseAar` for Android. And, `./gradlew assembleRegionsDebugXCFramework` or `./gradlew assembleRegionsReleaseXCFramework` for iOS. You can find the binaries at `[PROJECT_DIR]/regions/build/outputs/aar` and `[PROJECT_DIR]/regions/build/XCFrameworks` accordingly.
+Once the project is cloned, you can build the binaries by running the task `./gradlew bundleAndroidMainAar` for Android. And, `./gradlew assembleRegionsDebugXCFramework` or `./gradlew assembleRegionsReleaseXCFramework` for iOS. You can find the binaries at `[PROJECT_DIR]/regions/build/outputs/aar` and `[PROJECT_DIR]/regions/build/XCFrameworks` accordingly.
 
 ## Usage
 
 ### Android 
 
-To use this project in Android, you can run the task `./gradlew publishAndroidReleasePublicationToMavenLocal`. This will publish the package to your maven local (Make sure to have included `mavenLocal()` as part of your gradle repositories). Once successful, you can set the dependency as per any other package, e.g.:
+To use this project in Android, you can run the task `./gradlew publishAndroidPublicationToMavenLocal`. This will publish the package to your maven local (Make sure to have included `mavenLocal()` as part of your gradle repositories). Once successful, you can set the dependency as per any other package, e.g.:
 ```
 implementation("com.kape.android:regions:[version_number]")
 ```
