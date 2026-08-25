@@ -71,7 +71,9 @@ public data class VpnRegionsResponse(
             @SerialName("cn")
             val cn: String = "",
             @SerialName("van")
-            val usesVanillaOVPN: Boolean = true
+            val usesVanillaOVPN: Boolean = true,
+            @SerialName("port")
+            val port: Int? = null
         )
     }
 }

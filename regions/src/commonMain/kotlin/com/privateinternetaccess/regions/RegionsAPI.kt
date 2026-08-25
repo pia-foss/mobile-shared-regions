@@ -30,7 +30,8 @@ public enum class RegionsProtocol(val protocol: String) {
     OPENVPN_TCP("ovpntcp"),
     OPENVPN_UDP("ovpnudp"),
     WIREGUARD("wg"),
-    META("meta")
+    META("meta"),
+    AMNEZIA("awg")
 }
 
 /**
